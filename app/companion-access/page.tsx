@@ -1,4 +1,5 @@
-import { getCompanionAccessDashboard, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedCompanionAccessDashboard } from "@/lib/cached";
 import { formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -6,7 +7,7 @@ import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/s
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const data = await getCompanionAccessDashboard();
+  const data = await cachedCompanionAccessDashboard();
 
   return (
     <PageChrome eyebrow="Access" title="Admin Access" subtitle="Read-only view of admin workspace users linked back to production user records where possible.">

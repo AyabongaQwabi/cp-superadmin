@@ -1,4 +1,5 @@
-import { getOperationsSummary, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedOperationsSummary } from "@/lib/cached";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -18,7 +19,7 @@ function appointmentTone(status: string): "good" | "warning" | "critical" {
 }
 
 export default async function Page() {
-  const data = await getOperationsSummary();
+  const data = await cachedOperationsSummary();
   const adoptionRate =
     typeof data.latestAdoptionMetric?.adoptionRate === "number"
       ? formatPercent(data.latestAdoptionMetric.adoptionRate, 1)

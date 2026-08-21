@@ -1,4 +1,4 @@
-import { getClinicCapacity } from "@/lib/superadmin-read-model";
+import { cachedClinicCapacity } from "@/lib/cached";
 import { formatNumber, formatPercent } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -6,7 +6,7 @@ import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/s
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const data = await getClinicCapacity();
+  const data = await cachedClinicCapacity();
 
   return (
     <PageChrome

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getAppointmentExceptions, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedAppointmentExceptions } from "@/lib/cached";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, InlineLink, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -7,7 +8,7 @@ import { EmptyState, InlineLink, PageChrome, SectionCard, StatusBadge } from "@/
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const data = await getAppointmentExceptions();
+  const data = await cachedAppointmentExceptions();
 
   return (
     <PageChrome

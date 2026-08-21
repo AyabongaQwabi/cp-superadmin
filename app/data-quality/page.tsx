@@ -1,4 +1,5 @@
-import { getDataQualityDashboard, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedDataQualityDashboard } from "@/lib/cached";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -24,7 +25,7 @@ function issueLabels(appointment: AppointmentIssueInput) {
 }
 
 export default async function Page() {
-  const data = await getDataQualityDashboard();
+  const data = await cachedDataQualityDashboard();
   const issueRows = [
     ["Missing appointment status", data.counts.missingStatus, "critical"],
     ["Missing company id", data.counts.missingCompanyId, "critical"],

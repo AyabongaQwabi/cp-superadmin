@@ -1,4 +1,5 @@
-import { getAuditDashboard, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedAuditDashboard } from "@/lib/cached";
 import { formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, InlineLink, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -6,7 +7,7 @@ import { EmptyState, InlineLink, PageChrome, SectionCard, StatusBadge } from "@/
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const data = await getAuditDashboard();
+  const data = await cachedAuditDashboard();
 
   return (
     <PageChrome

@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
-import { companionApi } from "@/lib/companion-api";
+import { cachedCompanionApi, companionApi } from "@/lib/companion-api";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,7 @@ async function lockdown(formData: FormData) {
 }
 
 export default async function Page() {
-  const data = await companionApi<{ controls: Control[] }>("/api/admin/platform-controls");
+  const data = await cachedCompanionApi<{ controls: Control[] }>("/api/admin/platform-controls", 30);
   const active = data.controls.filter((control) => control.enabled);
 
   return (

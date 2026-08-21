@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getCompany360, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedCompany360 } from "@/lib/cached";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, InlineLink, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const data = await getCompany360(decodeURIComponent(id));
+  const data = await cachedCompany360(decodeURIComponent(id));
 
   if (!data.company && !data.profile) notFound();
 

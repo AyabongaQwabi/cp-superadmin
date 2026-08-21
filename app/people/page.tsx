@@ -1,4 +1,5 @@
-import { getPeopleDirectory, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedPeopleDirectory } from "@/lib/cached";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Page({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
   const params = await searchParams;
   const search = params.search?.trim();
-  const data = await getPeopleDirectory(search);
+  const data = await cachedPeopleDirectory(search);
   const usingDirectory = data.source === "directory";
   const unverified = data.employees.filter((employee) => employee.matchConfidence !== "verified").length;
   const invalidIds = data.employees.filter((employee) => employee.idNumberValid === false).length;

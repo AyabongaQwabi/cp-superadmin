@@ -1,4 +1,5 @@
-import { getInvoiceDashboard, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedInvoiceDashboard } from "@/lib/cached";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, InlineLink, PageChrome, SectionCard } from "@/components/superadmin/PageChrome";
@@ -6,7 +7,7 @@ import { EmptyState, InlineLink, PageChrome, SectionCard } from "@/components/su
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const data = await getInvoiceDashboard();
+  const data = await cachedInvoiceDashboard();
 
   return (
     <PageChrome eyebrow="Finance" title="Invoice Oversight" subtitle="Read-only invoice coverage, totals, clinic mix, top companies, and recent generated documents.">

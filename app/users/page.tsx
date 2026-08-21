@@ -1,4 +1,5 @@
-import { getUsersDirectory, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedUsersDirectory } from "@/lib/cached";
 import { formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -13,7 +14,7 @@ export default async function Page({
   const params = await searchParams;
   const search = params.search?.trim();
   const role = params.role?.trim() || "all";
-  const data = await getUsersDirectory({ search, role });
+  const data = await cachedUsersDirectory({ search, role });
 
   return (
     <PageChrome eyebrow="Access" title="Production Users" subtitle="Directory from the production users collection. Role counts are account roles, not appointment activity counts.">

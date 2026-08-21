@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
-import { companionApi } from "@/lib/companion-api";
+import { cachedCompanionApi, companionApi } from "@/lib/companion-api";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,7 @@ async function respond(formData: FormData) {
 }
 
 export default async function Page() {
-  const data = await companionApi<{ tickets: Ticket[] }>("/api/admin/support-tickets");
+  const data = await cachedCompanionApi<{ tickets: Ticket[] }>("/api/admin/support-tickets", 30);
 
   return (
     <PageChrome eyebrow="Support" title="Support Tickets" subtitle="Requests, complaints, and suggestions submitted by clinic teams.">

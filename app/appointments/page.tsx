@@ -1,4 +1,5 @@
-import { getAppointmentExplorer, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedAppointmentExplorer } from "@/lib/cached";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -20,7 +21,7 @@ export default async function Page({
   const params = await searchParams;
   const search = params.search?.trim();
   const status = params.status?.trim() || "all";
-  const data = await getAppointmentExplorer({ search, status });
+  const data = await cachedAppointmentExplorer({ search, status });
 
   return (
     <PageChrome

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { AdminInteractionTracker } from "@/components/superadmin/AdminInteractionTracker";
+import { BackgroundDataPreloader } from "@/components/superadmin/BackgroundDataPreloader";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -129,7 +130,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main className={isAuthenticated ? "admin-main" : ""} style={{ background: "var(--background)" }}>
           {children}
         </main>
-        {isAuthenticated && <AdminInteractionTracker />}
+        {isAuthenticated && (
+          <>
+            <AdminInteractionTracker />
+            <BackgroundDataPreloader />
+          </>
+        )}
       </body>
     </html>
   );

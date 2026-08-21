@@ -1,4 +1,4 @@
-import { companionApi } from "@/lib/companion-api";
+import { cachedCompanionApi } from "@/lib/companion-api";
 import { formatNumber } from "@/lib/format";
 import { PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
 import { StatTile } from "@/components/StatTile";
@@ -16,7 +16,7 @@ type Customer = {
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
-  const data = await companionApi<{ total: number; users: Customer[] }>(
+  const data = await cachedCompanionApi<{ total: number; users: Customer[] }>(
     `/api/admin/admin-companion/crm/audience?role=client&limit=100&q=${encodeURIComponent(q)}`,
   );
 

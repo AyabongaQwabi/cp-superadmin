@@ -1,4 +1,4 @@
-import { companionApi } from "@/lib/companion-api";
+import { cachedCompanionApi } from "@/lib/companion-api";
 import { formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -43,7 +43,7 @@ function BucketList({ rows }: { rows: Bucket[] }) {
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   const { days = "30" } = await searchParams;
-  const data = await companionApi<IntelData>(
+  const data = await cachedCompanionApi<IntelData>(
     `/api/admin/admin-companion/crm/user-intelligence?days=${encodeURIComponent(days)}`,
   );
 

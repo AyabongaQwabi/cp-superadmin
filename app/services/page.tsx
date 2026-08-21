@@ -1,4 +1,5 @@
-import { getServiceDashboard, displayDate } from "@/lib/superadmin-read-model";
+import { displayDate } from "@/lib/superadmin-read-model";
+import { cachedServiceDashboard } from "@/lib/cached";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -6,7 +7,7 @@ import { EmptyState, PageChrome, SectionCard, StatusBadge } from "@/components/s
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const data = await getServiceDashboard();
+  const data = await cachedServiceDashboard();
   const totalUses = data.services.reduce((sum, row) => sum + (row.uses ?? 0), 0);
   const bookedValue = data.services.reduce((sum, row) => sum + (row.bookedValue ?? 0), 0);
   const completedValue = data.services.reduce((sum, row) => sum + (row.completedValue ?? 0), 0);

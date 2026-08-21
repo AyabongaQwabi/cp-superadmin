@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminSubscription } from "@/lib/admin-companion";
-import { companionApi } from "@/lib/companion-api";
+import { cachedCompanionApi, companionApi } from "@/lib/companion-api";
 import { createAdminSessionToken, readSession, SESSION_COOKIE } from "@/lib/auth";
 import { formatNumber } from "@/lib/format";
 import { PageChrome, SectionCard, StatusBadge } from "@/components/superadmin/PageChrome";
@@ -105,8 +105,9 @@ export default async function Page() {
   const session = readSession((await cookies()).get(SESSION_COOKIE)?.value);
   const subscription = session ? await getAdminSubscription(session.id) : null;
   const remoteBilling = session
-    ? await companionApi<RemoteBillingState>(
+    ? await cachedCompanionApi<RemoteBillingState>(
         `/api/admin/admin-companion/billing/subscription?adminUserId=${encodeURIComponent(session.id)}`,
+        30,
       ).catch(() => null)
     : null;
   const isExpired = subscription ? !subscription.isUsable : true;

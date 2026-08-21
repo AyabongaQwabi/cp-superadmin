@@ -16,6 +16,20 @@ import {
   type AuditEventFilters,
 } from "./audit";
 import { getLifecycleTimingDashboard, getRoleLoginTimingDashboard } from "./superadmin-read-model";
+import {
+  getAppointmentExceptions,
+  getAppointmentExplorer,
+  getAuditDashboard,
+  getClinicCapacity,
+  getCompanionAccessDashboard,
+  getCompany360,
+  getDataQualityDashboard,
+  getInvoiceDashboard,
+  getOperationsSummary,
+  getPeopleDirectory,
+  getServiceDashboard,
+  getUsersDirectory,
+} from "./superadmin-read-model";
 
 // Historical data changes slowly (payment status is updated by admins, but
 // not second-to-second) — cache aggregate results for an hour rather than
@@ -115,5 +129,104 @@ export async function cachedEntityTimeline(
     () => getEntityTimeline(entityType, entityId),
     ["audit-entity-timeline", entityType, entityId],
     { revalidate: AUDIT_REVALIDATE_SECONDS }
+  )();
+}
+
+// Admin Companion page-level read models. These are read-only dashboard
+// projections, so short caches make navigation feel instant while still
+// refreshing in the background during normal use.
+const ADMIN_PAGE_REVALIDATE_SECONDS = 120;
+const DIRECTORY_REVALIDATE_SECONDS = 60;
+
+export const cachedOperationsSummary = unstable_cache(
+  getOperationsSummary,
+  ["admin-operations-summary"],
+  { revalidate: ADMIN_PAGE_REVALIDATE_SECONDS },
+);
+
+export const cachedAppointmentExceptions = unstable_cache(
+  getAppointmentExceptions,
+  ["admin-appointment-exceptions"],
+  { revalidate: ADMIN_PAGE_REVALIDATE_SECONDS },
+);
+
+export const cachedClinicCapacity = unstable_cache(
+  getClinicCapacity,
+  ["admin-clinic-capacity"],
+  { revalidate: ADMIN_PAGE_REVALIDATE_SECONDS },
+);
+
+export const cachedInvoiceDashboard = unstable_cache(
+  getInvoiceDashboard,
+  ["admin-invoice-dashboard"],
+  { revalidate: ADMIN_PAGE_REVALIDATE_SECONDS },
+);
+
+export const cachedServiceDashboard = unstable_cache(
+  getServiceDashboard,
+  ["admin-service-dashboard"],
+  { revalidate: ADMIN_PAGE_REVALIDATE_SECONDS },
+);
+
+export const cachedCompanionAccessDashboard = unstable_cache(
+  getCompanionAccessDashboard,
+  ["admin-companion-access-dashboard"],
+  { revalidate: ADMIN_PAGE_REVALIDATE_SECONDS },
+);
+
+export const cachedDataQualityDashboard = unstable_cache(
+  getDataQualityDashboard,
+  ["admin-data-quality-dashboard"],
+  { revalidate: ADMIN_PAGE_REVALIDATE_SECONDS },
+);
+
+export const cachedAuditDashboard = unstable_cache(
+  getAuditDashboard,
+  ["admin-audit-dashboard"],
+  { revalidate: DIRECTORY_REVALIDATE_SECONDS },
+);
+
+function searchKey(value?: string) {
+  return String(value || "").trim().toLowerCase();
+}
+
+export async function cachedPeopleDirectory(search?: string) {
+  const normalized = searchKey(search);
+  return unstable_cache(
+    () => getPeopleDirectory(search),
+    ["admin-people-directory", normalized],
+    { revalidate: DIRECTORY_REVALIDATE_SECONDS },
+  )();
+}
+
+export async function cachedAppointmentExplorer(params: { search?: string; status?: string }) {
+  const key = JSON.stringify({
+    search: searchKey(params.search),
+    status: searchKey(params.status),
+  });
+  return unstable_cache(
+    () => getAppointmentExplorer(params),
+    ["admin-appointment-explorer", key],
+    { revalidate: DIRECTORY_REVALIDATE_SECONDS },
+  )();
+}
+
+export async function cachedUsersDirectory(params: { search?: string; role?: string }) {
+  const key = JSON.stringify({
+    search: searchKey(params.search),
+    role: searchKey(params.role),
+  });
+  return unstable_cache(
+    () => getUsersDirectory(params),
+    ["admin-users-directory", key],
+    { revalidate: DIRECTORY_REVALIDATE_SECONDS },
+  )();
+}
+
+export async function cachedCompany360(companyId: string) {
+  return unstable_cache(
+    () => getCompany360(companyId),
+    ["admin-company-360", companyId],
+    { revalidate: DIRECTORY_REVALIDATE_SECONDS },
   )();
 }
