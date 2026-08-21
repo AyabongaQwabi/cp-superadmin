@@ -81,7 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <aside className="admin-sidebar">
             <Link href="/" className="admin-brand" aria-label="Clinicplus Admin Companion home">
               <Image
-                src="/admin-companion-logo.png"
+                src="/admin-companion-logo2.png"
                 alt="Clinicplus Admin Companion"
                 width={380}
                 height={158}

@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <main className="login-panel">
         <div className="mb-8">
           <Image
-            src="/admin-companion-logo.png"
+            src="/admin-companion-logo2.png"
             alt="Clinicplus Admin Companion"
             width={320}
             height={134}
