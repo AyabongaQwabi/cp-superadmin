@@ -60,7 +60,7 @@ export default async function Page() {
         )}
       </SectionCard>
 
-      <SectionCard title="Write path not enabled" description="Capacity edits should be implemented later through a guarded cp-companion superadmin API, with typed confirmation, idempotency, and immutable audit logging.">
+      <SectionCard title="Write path not enabled" description="Capacity edits should be implemented later through a guarded superadmin API, with typed confirmation, idempotency, and immutable audit logging.">
         <button
           type="button"
           disabled

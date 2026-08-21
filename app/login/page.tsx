@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 type LoginPageProps = {
   searchParams: Promise<{ error?: string }>;
 };
@@ -6,20 +8,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { error } = await searchParams;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: "var(--background)" }}>
-      <main
-        className="w-full max-w-md rounded-lg p-8"
-        style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}
-      >
+    <div className="login-screen">
+      <main className="login-panel">
         <div className="mb-8">
-          <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
-            ClinicPlus Analytics
-          </p>
-          <h1 className="text-2xl font-semibold mt-2" style={{ color: "var(--text-primary)" }}>
-            Sign in to continue
+          <Image
+            src="/admin-companion-logo.png"
+            alt="Clinicplus Admin Companion"
+            width={320}
+            height={134}
+            priority
+            className="login-logo"
+            style={{ width: "min(100%, 20rem)", height: "auto" }}
+          />
+          <h1 className="text-2xl font-semibold mt-6" style={{ color: "var(--text-primary)" }}>
+            Sign in with your ClinicPlus admin account
           </h1>
           <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-            Use your admin credentials to access the dashboard.
+            Access is limited to production admin users. New accounts receive the first month free.
           </p>
         </div>
 
@@ -58,8 +63,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </label>
           <button
             type="submit"
-            className="rounded-md px-4 py-2.5 font-semibold"
-            style={{ color: "#fff", background: "var(--series-1)" }}
+            className="premium-button"
           >
             Sign in
           </button>

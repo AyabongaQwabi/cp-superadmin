@@ -38,8 +38,8 @@ export default async function Page() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatTile label="Companion users" value={formatNumber(data.counts.companionUserCount)} tone="good" />
-        <StatTile label="Companion adoption" value={adoptionRate} tone={data.latestAdoptionMetric ? "good" : undefined} />
+        <StatTile label="Admin workspace users" value={formatNumber(data.counts.companionUserCount)} tone="good" />
+        <StatTile label="Workspace adoption" value={adoptionRate} tone={data.latestAdoptionMetric ? "good" : undefined} />
         <StatTile label="Pricing anomalies" value={formatNumber(data.counts.anomalyCount)} tone={data.counts.anomalyCount ? "critical" : "good"} />
         <StatTile label="Data-quality flags" value={formatNumber(data.counts.dataQualityCount)} tone={data.counts.dataQualityCount ? "warning" : "good"} />
       </div>
@@ -59,9 +59,9 @@ export default async function Page() {
         )}
       </SectionCard>
 
-      <SectionCard title="Recent sync runs" description="Read from cp_companion.syncLog when the Companion sync pipeline has populated derived collections.">
+      <SectionCard title="Recent sync runs" description="Latest derived-data refreshes for admin analytics and operational read models.">
         {data.latestSyncRuns.length === 0 ? (
-          <EmptyState title="No Companion sync runs found yet" detail="Showing production operational reads below until the Companion derived collections are available." />
+          <EmptyState title="No sync runs found yet" detail="Showing production operational reads below until derived analytics collections are available." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -95,7 +95,7 @@ export default async function Page() {
         )}
       </SectionCard>
 
-      <SectionCard title="Recent production appointments" description="Read-only sample from production.appointments so the command center is populated even before Companion sync logs exist.">
+      <SectionCard title="Recent production appointments" description="Read-only sample from production.appointments so the command center is populated even before derived sync logs exist.">
         {data.recentProductionAppointments.length === 0 ? (
           <EmptyState title="No recent production appointments found" />
         ) : (

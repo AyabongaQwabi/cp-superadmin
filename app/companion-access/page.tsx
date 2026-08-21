@@ -9,9 +9,9 @@ export default async function Page() {
   const data = await getCompanionAccessDashboard();
 
   return (
-    <PageChrome eyebrow="Companion" title="Companion Access" subtitle="Read-only view of Companion users linked back to production user records where possible.">
+    <PageChrome eyebrow="Access" title="Admin Access" subtitle="Read-only view of admin workspace users linked back to production user records where possible.">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatTile label="Companion users" value={formatNumber(data.total)} />
+        <StatTile label="Workspace users" value={formatNumber(data.total)} />
         {data.roleCounts.slice(0, 3).map((row) => (
           <StatTile key={String(row._id ?? "unknown")} label={String(row._id ?? "unknown")} value={formatNumber(row.count ?? 0)} />
         ))}
@@ -19,14 +19,14 @@ export default async function Page() {
 
       <SectionCard title="Linked users">
         {data.rows.length === 0 ? (
-          <EmptyState title="No Companion users found" />
+          <EmptyState title="No workspace users found" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
                   <th className="text-left py-2 pr-4">Production user</th>
-                  <th className="text-left py-2 px-3">Companion role</th>
+                  <th className="text-left py-2 px-3">Workspace role</th>
                   <th className="text-left py-2 px-3">Production state</th>
                   <th className="text-right py-2 pl-3">First login</th>
                 </tr>

@@ -17,7 +17,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
     <PageChrome
       eyebrow="Identity"
       title="People & Identity Reconciliation"
-      subtitle="Identity reconciliation view. When the Companion employee directory is empty, this page falls back to appointment managers from usersWhoCanManage on appointments; that is an activity count, not the production admin-account count."
+      subtitle="Identity reconciliation view. When the employee directory is empty, this page falls back to appointment managers from usersWhoCanManage on appointments; that is an activity count, not the production admin-account count."
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatTile label={usingDirectory ? "Directory rows" : "Managers shown"} value={formatNumber(data.total)} />
@@ -46,7 +46,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
       {!usingDirectory && (
         <SectionCard title="Identity directory not populated yet">
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            The Companion identity backfill collections are empty in <code>cp_companion</code>, so this page is showing appointment managers from production appointment history instead.
+            The identity backfill collections are empty, so this page is showing appointment managers from production appointment history instead.
           </p>
         </SectionCard>
       )}

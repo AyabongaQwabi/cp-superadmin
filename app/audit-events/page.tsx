@@ -62,7 +62,7 @@ async function AuditEventsList({ searchParams }: { searchParams: AuditEventsSear
           Audit Events
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Activity log from cp-companion (<code>cp_companion.audit_events</code>). Cached for up
+          Activity log from the admin analytics read model. Cached for up
           to 60 seconds.
         </p>
       </div>

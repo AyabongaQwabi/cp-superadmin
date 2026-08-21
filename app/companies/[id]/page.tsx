@@ -18,7 +18,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <PageChrome
       eyebrow="Company 360"
       title={name}
-      subtitle={`Company id ${id}. Production company data, derived Companion profile, recent appointments, invoices, flags, and audit events.`}
+      subtitle={`Company id ${id}. Production company data, derived profile, recent appointments, invoices, flags, and audit events.`}
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatTile label="Historical spend" value={formatCurrency(data.profile?.totalHistoricalSpend ?? 0)} tone="good" />

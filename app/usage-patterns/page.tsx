@@ -48,7 +48,7 @@ export default async function Page() {
     <PageChrome
       eyebrow="Usage"
       title="Login Timing by Role"
-      subtitle={`Admin and client login timing in ${data.timezone}. Combines explicit app login events, legacy production login tracking, audit login events, and Companion first-login records.`}
+      subtitle={`Admin and client login timing in ${data.timezone}. Combines explicit app login events, legacy production login tracking, audit login events, and historical first-login records.`}
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatTile label="Observed login events" value={formatNumber(totalEvents)} sub={`Across ${data.timezone}`} tone="good" />

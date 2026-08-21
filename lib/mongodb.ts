@@ -40,16 +40,19 @@ export async function getDb() {
   return client.db(dbName);
 }
 
-// The cp-companion service owns a separate database (`cp_companion`) on the
-// same Atlas cluster as DATABASE_URL/SELECTED_DB — same connection/cluster,
-// different database name. COMPANION_DB matches the env var convention used
-// by cp-companion itself (defaulting to "cp_companion" there too), so both
-// services agree on the database name without hardcoding it in either repo.
+// Derived operational read-model database. This remains separate from the
+// production DB and is used only for analytics surfaces that need synced data.
 const companionDbName = process.env.COMPANION_DB || "cp_companion";
+const adminCompanionDbName = process.env.ADMIN_COMPANION_DB || "clinicplus_admin_companion";
 
 export async function getCompanionDb() {
   const client = await getClientPromise();
   return client.db(companionDbName);
+}
+
+export async function getAdminCompanionDb() {
+  const client = await getClientPromise();
+  return client.db(adminCompanionDbName);
 }
 
 export default getClientPromise;

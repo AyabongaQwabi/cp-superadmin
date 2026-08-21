@@ -1,9 +1,9 @@
-# ClinicPlus Analytics Dashboard
+# Clinicplus Admin Companion
 
-A read-only Next.js business analytics dashboard for ClinicPlus, built directly on top of the
-production MongoDB database used by `clinicplus-server-latest-stable-version`. It never talks to
-that server's Express/Socket.IO API — it reads the database directly, with plain aggregation
-pipelines.
+A premium SaaS administration dashboard for ClinicPlus, built directly on top of the production
+MongoDB database used by `clinicplus-server-latest-stable-version`. It uses production admin
+accounts for authentication, stores Admin Companion subscription and interaction analytics in a
+separate database, and keeps operational reporting read-only against production data.
 
 See `../ANALYTICS_INVENTORY.md`, `../PHASE_1B_REAL_DATA_VERIFICATION.md`, and
 `../PHASE_1C_PAYMENT_MODEL_RESOLVED.md` for the full write-up of the data model, the business
@@ -22,6 +22,10 @@ same.
 - Breakdown by company — ranked by revenue collected, with decline rate as a reliability signal.
 - Breakdown by ClinicPlus admin user (there is no separate "staff" role in this system's data —
   see the Methodology panel).
+- Admin login timing, lifecycle timing, support, controls, and interaction analytics used to
+  improve the admin experience.
+- Standard subscription access: first month free, then R299 per user per month with manual Yoco
+  renewal whenever the paid period expires.
 
 ## Setup
 
@@ -42,12 +46,13 @@ same.
    ```
    DATABASE_URL=mongodb+srv://<user>:<password>@<cluster-host>/?retryWrites=true&w=majority
    SELECTED_DB=production
+   ADMIN_COMPANION_DB=clinicplus_admin_companion
+   ADMIN_COMPANION_BASE_URL=https://admin.clinicplus.example
+   AUTH_SESSION_SECRET=<long-random-secret>
    ```
 
-   **Strongly recommended:** point this at a **read-only** database user or a read replica, not
-   a credential with write access. This app issues no write operations anywhere in its code, but
-   defense in depth is cheap — an aggregation-only, read-only Mongo user removes any risk of this
-   reporting tool ever touching production data, even accidentally.
+   Production reads should still use the narrowest credentials possible. The app writes only to
+   `ADMIN_COMPANION_DB` for admin profiles, subscriptions, login events, and page-view analytics.
 
 3. **Run the dev server**
 

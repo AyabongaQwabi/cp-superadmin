@@ -45,7 +45,7 @@ export default async function Page() {
     <PageChrome
       eyebrow="Configuration"
       title="System Controls"
-      subtitle="Superadmin surface for ClinicPlus platform kill-switches. This uses the guarded cp-companion admin API."
+      subtitle="Superadmin surface for ClinicPlus platform kill-switches and guarded operational actions."
     >
       <SectionCard title="Global lockdown">
         <form action={lockdown} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto]">
