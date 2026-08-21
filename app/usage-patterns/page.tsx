@@ -1,4 +1,4 @@
-import { getRoleLoginTimingDashboard } from "@/lib/superadmin-read-model";
+import { cachedRoleLoginTiming } from "@/lib/cached";
 import { formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { DayHourHeatmaps, SlotBars, TopTimingSlots } from "@/components/superadmin/TimingAnalysis";
@@ -35,9 +35,9 @@ function DataUnavailable({ detail }: { detail: string }) {
 }
 
 export default async function Page() {
-  let data: Awaited<ReturnType<typeof getRoleLoginTimingDashboard>>;
+  let data: Awaited<ReturnType<typeof cachedRoleLoginTiming>>;
   try {
-    data = await getRoleLoginTimingDashboard();
+    data = await cachedRoleLoginTiming();
   } catch (error) {
     return <DataUnavailable detail={errorDetail(error)} />;
   }
@@ -48,7 +48,7 @@ export default async function Page() {
     <PageChrome
       eyebrow="Usage"
       title="Login Timing by Role"
-      subtitle={`Admin and client login timing in ${data.timezone}. Uses cp_companion.userLoginEvents first, with production tracking, Companion audit login events, and first-login records as fallback evidence.`}
+      subtitle={`Admin and client login timing in ${data.timezone}. Combines explicit app login events, legacy production login tracking, audit login events, and Companion first-login records.`}
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatTile label="Observed login events" value={formatNumber(totalEvents)} sub={`Across ${data.timezone}`} tone="good" />

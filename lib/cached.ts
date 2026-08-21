@@ -15,6 +15,7 @@ import {
   type AuditEntityType,
   type AuditEventFilters,
 } from "./audit";
+import { getLifecycleTimingDashboard, getRoleLoginTimingDashboard } from "./superadmin-read-model";
 
 // Historical data changes slowly (payment status is updated by admins, but
 // not second-to-second) — cache aggregate results for an hour rather than
@@ -80,6 +81,19 @@ export async function cachedEmployeeSummary(filters: SegmentFilters = {}) {
 // window than the 1-hour convention above rather than the same cadence
 // as the revenue/appointment aggregates.
 const AUDIT_REVALIDATE_SECONDS = 60;
+const TIMING_REVALIDATE_SECONDS = 300;
+
+export const cachedRoleLoginTiming = unstable_cache(
+  getRoleLoginTimingDashboard,
+  ["role-login-timing-v2"],
+  { revalidate: TIMING_REVALIDATE_SECONDS },
+);
+
+export const cachedLifecycleTiming = unstable_cache(
+  getLifecycleTimingDashboard,
+  ["lifecycle-timing-v3"],
+  { revalidate: TIMING_REVALIDATE_SECONDS },
+);
 
 function auditFilterKey(filters: AuditEventFilters): string {
   return JSON.stringify(filters ?? {});

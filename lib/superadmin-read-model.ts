@@ -81,6 +81,36 @@ export interface LifecycleTimingSummary {
   peakHour: string;
 }
 
+export interface LifecycleIntervalPerson {
+  userId: string;
+  name: string;
+  email?: string | null;
+  count: number;
+  companies: string[];
+}
+
+export interface LifecycleIntervalCompany {
+  name: string;
+  count: number;
+}
+
+export interface LifecycleIntervalBucket {
+  id: "late_nighters" | "early_morningers" | "normies" | "eveningers" | "late_eveningers";
+  label: string;
+  window: string;
+  total: number;
+  participantTotal: number;
+  showPeople: boolean;
+  people: LifecycleIntervalPerson[];
+  companies: LifecycleIntervalCompany[];
+}
+
+export interface LifecycleIntervalGroup {
+  eventType: "signups" | "appointments" | "companies";
+  label: string;
+  buckets: LifecycleIntervalBucket[];
+}
+
 interface RawTimingEvent {
   role?: unknown;
   eventType?: unknown;
@@ -102,6 +132,19 @@ const TIMING_TIMEZONE = "Africa/Johannesburg";
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TRACKING_LOGIN_PATTERN = "(login|logged|sign.?in|auth)";
 const EVENT_READ_LIMIT = 25000;
+
+const LIFECYCLE_INTERVALS: Array<{
+  id: LifecycleIntervalBucket["id"];
+  label: string;
+  window: string;
+  showPeople: boolean;
+}> = [
+  { id: "late_nighters", label: "Late nighters", window: "00:00-03:59", showPeople: true },
+  { id: "early_morningers", label: "Early morningers", window: "04:00-05:59", showPeople: true },
+  { id: "normies", label: "Normies", window: "06:00-18:59", showPeople: false },
+  { id: "eveningers", label: "Eveningers", window: "19:00-20:59", showPeople: true },
+  { id: "late_eveningers", label: "Late eveningers", window: "21:00-23:59", showPeople: true },
+];
 
 function iso(value: unknown): string | null {
   if (!value) return null;
@@ -987,6 +1030,413 @@ function summarizeTimedEvents<T extends string>(
   };
 }
 
+type TimingBucket = {
+  group: string;
+  dayOfWeek: number;
+  hour: number;
+  count: number;
+};
+
+type LifecycleIntervalCount = {
+  eventType: LifecycleIntervalGroup["eventType"];
+  interval: LifecycleIntervalBucket["id"];
+  count: number;
+};
+
+type LifecyclePersonBucket = {
+  eventType: LifecycleIntervalGroup["eventType"];
+  interval: LifecycleIntervalBucket["id"];
+  userId: string | null;
+  name: string | null;
+  email?: string | null;
+  count: number;
+  companies?: string[][];
+};
+
+type LifecycleCompanyBucket = {
+  eventType: LifecycleIntervalGroup["eventType"];
+  interval: LifecycleIntervalBucket["id"];
+  company: string | null;
+  count: number;
+};
+
+function summarizeTimingBuckets<T extends string>(
+  buckets: TimingBucket[],
+  labels: Record<T, string>,
+) {
+  const totals = new Map<T, number>();
+  const dayCounts = new Map<string, number>();
+  const hourCounts = new Map<string, number>();
+  const dayHourCounts = new Map<string, number>();
+
+  for (const bucket of buckets) {
+    const group = bucket.group as T;
+    const count = Number(bucket.count) || 0;
+    totals.set(group, (totals.get(group) ?? 0) + count);
+    dayCounts.set(`${group}:${bucket.dayOfWeek}`, (dayCounts.get(`${group}:${bucket.dayOfWeek}`) ?? 0) + count);
+    hourCounts.set(`${group}:${bucket.hour}`, (hourCounts.get(`${group}:${bucket.hour}`) ?? 0) + count);
+    dayHourCounts.set(
+      `${group}:${bucket.dayOfWeek}:${bucket.hour}`,
+      (dayHourCounts.get(`${group}:${bucket.dayOfWeek}:${bucket.hour}`) ?? 0) + count,
+    );
+  }
+
+  const groups = Object.keys(labels) as T[];
+  const byDay = groups.map((group) => ({
+    group,
+    label: labels[group],
+    slots: Array.from({ length: 7 }, (_, index) => {
+      const dayOfWeek = index + 1;
+      return { key: String(dayOfWeek), label: dayLabel(dayOfWeek), count: dayCounts.get(`${group}:${dayOfWeek}`) ?? 0 };
+    }),
+  }));
+  const byHour = groups.map((group) => ({
+    group,
+    label: labels[group],
+    slots: Array.from({ length: 24 }, (_, hour) => ({
+      key: String(hour),
+      label: hourLabel(hour),
+      count: hourCounts.get(`${group}:${hour}`) ?? 0,
+    })),
+  }));
+  const dayHour = groups.map((group) => ({
+    group,
+    label: labels[group],
+    slots: Array.from({ length: 7 * 24 }, (_, index): DayHourSlot => {
+      const dayOfWeek = Math.floor(index / 24) + 1;
+      const hour = index % 24;
+      return {
+        dayOfWeek,
+        dayLabel: dayLabel(dayOfWeek),
+        hour,
+        count: dayHourCounts.get(`${group}:${dayOfWeek}:${hour}`) ?? 0,
+      };
+    }),
+  }));
+  const topSlots = groups.map((group) => ({
+    group,
+    label: labels[group],
+    slots: dayHour
+      .find((row) => row.group === group)!
+      .slots.filter((slot) => slot.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8),
+  }));
+
+  return { byDay, byHour, dayHour, topSlots, totals };
+}
+
+async function getTimingBuckets(collection: string, group: string) {
+  const db = await getDb();
+  return db.collection(collection).aggregate<TimingBucket>([
+    { $match: { "tracking.0": { $exists: true } } },
+    { $project: { createdAt: dateFromTrackingExpression() } },
+    { $match: { createdAt: { $ne: null } } },
+    {
+      $project: {
+        group: { $literal: group },
+        dayOfWeek: { $dayOfWeek: { date: "$createdAt", timezone: TIMING_TIMEZONE } },
+        hour: { $hour: { date: "$createdAt", timezone: TIMING_TIMEZONE } },
+      },
+    },
+    {
+      $group: {
+        _id: { group: "$group", dayOfWeek: "$dayOfWeek", hour: "$hour" },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        group: "$_id.group",
+        dayOfWeek: "$_id.dayOfWeek",
+        hour: "$_id.hour",
+        count: 1,
+      },
+    },
+  ], { allowDiskUse: true }).toArray();
+}
+
+function intervalExpressionFromHour(hourExpression: Document) {
+  return {
+    $switch: {
+      branches: [
+        { case: { $lt: [hourExpression, 4] }, then: "late_nighters" },
+        { case: { $lt: [hourExpression, 6] }, then: "early_morningers" },
+        { case: { $lt: [hourExpression, 19] }, then: "normies" },
+        { case: { $lt: [hourExpression, 21] }, then: "eveningers" },
+      ],
+      default: "late_eveningers",
+    },
+  };
+}
+
+function lifecycleIntervalProject(eventType: LifecycleIntervalGroup["eventType"], actorExpression: Document, companiesExpression: Document) {
+  const createdAt = dateFromTrackingExpression();
+  const hour = { $hour: { date: "$createdAt", timezone: TIMING_TIMEZONE } };
+  return [
+    { $match: { "tracking.0": { $exists: true } } },
+    { $project: { createdAt, actors: actorExpression, companies: companiesExpression } },
+    { $match: { createdAt: { $ne: null } } },
+    {
+      $project: {
+        eventType: { $literal: eventType },
+        interval: intervalExpressionFromHour(hour),
+        actors: {
+          $filter: {
+            input: "$actors",
+            as: "actor",
+            cond: { $ne: ["$$actor.id", null] },
+          },
+        },
+        companies: {
+          $filter: {
+            input: "$companies",
+            as: "company",
+            cond: { $and: [{ $ne: ["$$company", null] }, { $ne: ["$$company", ""] }] },
+          },
+        },
+      },
+    },
+  ];
+}
+
+async function getLifecycleIntervalCounts() {
+  const db = await getDb();
+  const userCompanies = {
+    $setUnion: [
+      {
+        $map: {
+          input: { $ifNull: ["$companiesCanEdit", []] },
+          as: "company",
+          in: "$$company.name",
+        },
+      },
+      {
+        $map: {
+          input: { $ifNull: ["$companiesManaging", []] },
+          as: "company",
+          in: "$$company.name",
+        },
+      },
+    ],
+  };
+  const managerActors = {
+    $cond: [
+      { $gt: [{ $size: { $ifNull: ["$usersWhoCanManage", []] } }, 0] },
+      {
+        $map: {
+          input: "$usersWhoCanManage",
+          as: "manager",
+          in: {
+            id: "$$manager.id",
+            name: "$$manager.name",
+            email: null,
+          },
+        },
+      },
+      [
+        {
+          id: { $arrayElemAt: ["$tracking.doer", 0] },
+          name: null,
+          email: null,
+        },
+      ],
+    ],
+  };
+  const companyActor = [
+    {
+      id: { $arrayElemAt: ["$tracking.doer", 0] },
+      name: null,
+      email: null,
+    },
+  ];
+
+  const basePipeline: Document[] = [
+    ...lifecycleIntervalProject(
+      "signups",
+      [
+        {
+          id: "$id",
+          name: {
+            $trim: {
+              input: {
+                $concat: [
+                  { $ifNull: ["$details.name", ""] },
+                  " ",
+                  { $ifNull: ["$details.surname", ""] },
+                ],
+              },
+            },
+          },
+          email: "$details.email",
+        },
+      ],
+      userCompanies,
+    ),
+    {
+      $unionWith: {
+        coll: "appointments",
+        pipeline: lifecycleIntervalProject("appointments", managerActors, ["$details.company.name"]),
+      },
+    },
+    {
+      $unionWith: {
+        coll: "deleted_appointments",
+        pipeline: lifecycleIntervalProject("appointments", managerActors, ["$details.company.name"]),
+      },
+    },
+    {
+      $unionWith: {
+        coll: "companies",
+        pipeline: lifecycleIntervalProject("companies", companyActor, ["$details.name", "$name"]),
+      },
+    },
+  ];
+
+  const [totals, people, companies] = await Promise.all([
+    db.collection("users")
+      .aggregate<LifecycleIntervalCount>([
+        ...basePipeline,
+        { $group: { _id: { eventType: "$eventType", interval: "$interval" }, count: { $sum: 1 } } },
+        { $project: { _id: 0, eventType: "$_id.eventType", interval: "$_id.interval", count: 1 } },
+      ], { allowDiskUse: true })
+      .toArray(),
+    db.collection("users")
+      .aggregate<LifecyclePersonBucket>([
+        ...basePipeline,
+        { $unwind: { path: "$actors", preserveNullAndEmptyArrays: false } },
+        {
+          $group: {
+            _id: {
+              eventType: "$eventType",
+              interval: "$interval",
+              userId: "$actors.id",
+              name: "$actors.name",
+              email: "$actors.email",
+            },
+            count: { $sum: 1 },
+            companies: { $addToSet: "$companies" },
+          },
+        },
+        { $sort: { count: -1 } },
+        {
+          $project: {
+            _id: 0,
+            eventType: "$_id.eventType",
+            interval: "$_id.interval",
+            userId: "$_id.userId",
+            name: "$_id.name",
+            email: "$_id.email",
+            count: 1,
+            companies: 1,
+          },
+        },
+      ], { allowDiskUse: true })
+      .toArray(),
+    db.collection("users")
+      .aggregate<LifecycleCompanyBucket>([
+        ...basePipeline,
+        { $unwind: { path: "$companies", preserveNullAndEmptyArrays: false } },
+        {
+          $group: {
+            _id: { eventType: "$eventType", interval: "$interval", company: "$companies" },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+        {
+          $project: {
+            _id: 0,
+            eventType: "$_id.eventType",
+            interval: "$_id.interval",
+            company: "$_id.company",
+            count: 1,
+          },
+        },
+      ], { allowDiskUse: true })
+      .toArray(),
+  ]);
+
+  const unknownIds = Array.from(
+    new Set(
+      people
+        .filter((person) => person.userId && !person.name)
+        .map((person) => person.userId as string),
+    ),
+  );
+  const productionUsers = unknownIds.length
+    ? await db
+        .collection("users")
+        .find({ id: { $in: unknownIds } })
+        .project({ id: 1, details: 1, companiesCanEdit: 1, companiesManaging: 1 })
+        .toArray()
+    : [];
+  const usersById = new Map(productionUsers.map((user) => [user.id, user]));
+
+  const labels = {
+    signups: "User signups",
+    appointments: "Appointments created",
+    companies: "Companies created",
+  };
+  const totalByKey = new Map(totals.map((row) => [`${row.eventType}:${row.interval}`, row.count]));
+  const peopleByKey = new Map<string, LifecycleIntervalPerson[]>();
+  const companiesByKey = new Map<string, LifecycleIntervalCompany[]>();
+
+  for (const person of people) {
+    if (!person.userId) continue;
+    const key = `${person.eventType}:${person.interval}`;
+    const fallback = usersById.get(person.userId);
+    const fallbackName = fallback
+      ? [fallback.details?.name, fallback.details?.surname].filter(Boolean).join(" ")
+      : "";
+    const fallbackCompanies = fallback
+      ? [...(fallback.companiesCanEdit ?? []), ...(fallback.companiesManaging ?? [])]
+          .map((company: { name?: string }) => company?.name)
+          .filter((name): name is string => typeof name === "string" && name.length > 0)
+      : [];
+    const flattenedCompanies = Array.from(
+      new Set([...(person.companies ?? []).flat(), ...fallbackCompanies].filter(Boolean)),
+    ).sort();
+    const bucketPeople = peopleByKey.get(key) ?? [];
+    bucketPeople.push({
+      userId: person.userId,
+      name: person.name || fallbackName || person.userId,
+      email: person.email ?? fallback?.details?.email ?? null,
+      count: person.count,
+      companies: flattenedCompanies.slice(0, 8),
+    });
+    peopleByKey.set(key, bucketPeople);
+  }
+
+  for (const company of companies) {
+    if (!company.company) continue;
+    const key = `${company.eventType}:${company.interval}`;
+    const bucketCompanies = companiesByKey.get(key) ?? [];
+    bucketCompanies.push({ name: company.company, count: company.count });
+    companiesByKey.set(key, bucketCompanies);
+  }
+
+  return (Object.keys(labels) as Array<LifecycleIntervalGroup["eventType"]>).map((eventType) => ({
+    eventType,
+    label: labels[eventType],
+    buckets: LIFECYCLE_INTERVALS.map((interval) => {
+      const key = `${eventType}:${interval.id}`;
+      const bucketPeople = (peopleByKey.get(key) ?? []).sort((a, b) => b.count - a.count);
+      return {
+        id: interval.id,
+        label: interval.label,
+        window: interval.window,
+        total: totalByKey.get(key) ?? 0,
+        participantTotal: bucketPeople.reduce((sum, person) => sum + person.count, 0),
+        showPeople: interval.showPeople,
+        people: interval.showPeople ? bucketPeople.slice(0, 12) : [],
+        companies: (companiesByKey.get(key) ?? []).slice(0, 8),
+      };
+    }),
+  }));
+}
+
 function dateFromTrackingExpression() {
   return {
     $convert: {
@@ -1051,10 +1501,6 @@ export async function getRoleLoginTimingDashboard() {
     }))
     .filter((row) => row.group === "admin" || row.group === "client");
 
-  if (trackedEvents.length > 0) {
-    return buildRoleLoginTimingDashboard(trackedEvents);
-  }
-
   const prodDb = await getDb();
   const [productionTrackingEvents, companionFirstLogins, auditLoginEvents] = await Promise.all([
     prodDb
@@ -1110,7 +1556,7 @@ export async function getRoleLoginTimingDashboard() {
     .map((row) => ({
       group: roleByProductionId.get(row.productionUserId ?? "") as "admin" | "client" | undefined,
       createdAt: row.firstLoginAt,
-      source: "companion-first-login",
+      source: "cp-companion-first-login",
     }))
     .filter((row): row is { group: "admin" | "client"; createdAt: unknown; source: string } =>
       row.group === "admin" || row.group === "client",
@@ -1119,7 +1565,7 @@ export async function getRoleLoginTimingDashboard() {
     .map((row) => ({
       group: roleByProductionId.get(row.actorId ?? "") as "admin" | "client" | undefined,
       createdAt: row.createdAt,
-      source: "companion-audit-login",
+      source: typeof row.source === "string" && row.source.length > 0 ? row.source : "audit-login",
     }))
     .filter((row): row is { group: "admin" | "client"; createdAt: unknown; source: string } =>
       row.group === "admin" || row.group === "client",
@@ -1132,63 +1578,24 @@ export async function getRoleLoginTimingDashboard() {
     }))
     .filter((row) => row.group === "admin" || row.group === "client");
 
-  return buildRoleLoginTimingDashboard([...productionEvents, ...auditEvents, ...companionEvents]);
+  return buildRoleLoginTimingDashboard([...trackedEvents, ...productionEvents, ...auditEvents, ...companionEvents]);
 }
 
 export async function getLifecycleTimingDashboard() {
-  const prodDb = await getDb();
-
-  const [events] = await Promise.all([
-    prodDb
-      .collection("users")
-      .aggregate<RawTimingEvent>([
-        { $project: { eventType: { $literal: "signups" }, createdAt: dateFromTrackingExpression() } },
-        { $match: { createdAt: { $ne: null } } },
-        {
-          $unionWith: {
-            coll: "appointments",
-            pipeline: [
-              { $project: { eventType: { $literal: "appointments" }, createdAt: dateFromTrackingExpression() } },
-              { $match: { createdAt: { $ne: null } } },
-            ],
-          },
-        },
-        {
-          $unionWith: {
-            coll: "deleted_appointments",
-            pipeline: [
-              { $project: { eventType: { $literal: "appointments" }, createdAt: dateFromTrackingExpression() } },
-              { $match: { createdAt: { $ne: null } } },
-            ],
-          },
-        },
-        {
-          $unionWith: {
-            coll: "companies",
-            pipeline: [
-              { $project: { eventType: { $literal: "companies" }, createdAt: dateFromTrackingExpression() } },
-              { $match: { createdAt: { $ne: null } } },
-            ],
-          },
-        },
-        { $sort: { createdAt: -1 } },
-        { $limit: EVENT_READ_LIMIT * 2 },
-      ], { allowDiskUse: true })
-      .toArray(),
-  ]);
-
   const labels = {
     signups: "User signups",
     appointments: "Appointments created",
     companies: "Companies created",
   };
-  const timing = summarizeTimedEvents(
-    events
-      .map((event) => ({
-        group: event.eventType as keyof typeof labels,
-        createdAt: event.createdAt,
-      }))
-      .filter((event) => event.group in labels),
+  const [signupBuckets, appointmentBuckets, deletedAppointmentBuckets, companyBuckets] = await Promise.all([
+    getTimingBuckets("users", "signups"),
+    getTimingBuckets("appointments", "appointments"),
+    getTimingBuckets("deleted_appointments", "appointments"),
+    getTimingBuckets("companies", "companies"),
+  ]);
+  const intervals = await getLifecycleIntervalCounts();
+  const timing = summarizeTimingBuckets(
+    [...signupBuckets, ...appointmentBuckets, ...deletedAppointmentBuckets, ...companyBuckets],
     labels,
   );
 
@@ -1214,6 +1621,7 @@ export async function getLifecycleTimingDashboard() {
     byHour: timing.byHour,
     dayHour: timing.dayHour,
     topSlots: timing.topSlots,
+    intervals,
     timezone: TIMING_TIMEZONE,
   };
 }

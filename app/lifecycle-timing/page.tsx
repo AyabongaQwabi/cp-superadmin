@@ -1,8 +1,9 @@
-import { getLifecycleTimingDashboard } from "@/lib/superadmin-read-model";
+import { cachedLifecycleTiming } from "@/lib/cached";
 import { formatNumber } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { DayHourHeatmaps, SlotBars, TopTimingSlots } from "@/components/superadmin/TimingAnalysis";
 import { EmptyState, PageChrome, SectionCard } from "@/components/superadmin/PageChrome";
+import type { LifecycleIntervalBucket } from "@/lib/superadmin-read-model";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +35,103 @@ function DataUnavailable({ detail }: { detail: string }) {
   );
 }
 
+function IntervalBucketCard({ bucket }: { bucket: LifecycleIntervalBucket }) {
+  return (
+    <div className="rounded-lg p-4 flex flex-col gap-3" style={{ border: "1px solid var(--border)", background: "var(--background)" }}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            {bucket.label}
+          </h3>
+          <p className="text-xs mt-1 tabular-nums" style={{ color: "var(--text-muted)" }}>
+            {bucket.window}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-semibold tabular-nums" style={{ color: "var(--series-1)" }}>
+            {formatNumber(bucket.total)}
+          </p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            events
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded p-2" style={{ border: "1px solid var(--gridline)" }}>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Person-actions</p>
+          <p className="text-lg font-semibold tabular-nums" style={{ color: "var(--text-primary)" }}>
+            {formatNumber(bucket.participantTotal)}
+          </p>
+        </div>
+        <div className="rounded p-2" style={{ border: "1px solid var(--gridline)" }}>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Companies</p>
+          <p className="text-lg font-semibold tabular-nums" style={{ color: "var(--text-primary)" }}>
+            {formatNumber(bucket.companies.length)}
+          </p>
+        </div>
+      </div>
+
+      {bucket.showPeople ? (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--text-secondary)" }}>
+            People
+          </p>
+          {bucket.people.length ? (
+            <div className="grid gap-2">
+              {bucket.people.map((person) => (
+                <div key={person.userId} className="rounded p-2" style={{ border: "1px solid var(--gridline)" }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{person.name}</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{person.email ?? person.userId}</p>
+                    </div>
+                    <span className="text-sm font-semibold tabular-nums" style={{ color: "var(--series-1)" }}>
+                      {formatNumber(person.count)}
+                    </span>
+                  </div>
+                  {person.companies.length > 0 && (
+                    <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                      {person.companies.join(", ")}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>No responsible users identified.</p>
+          )}
+        </div>
+      ) : (
+        <p className="text-xs rounded p-2" style={{ color: "var(--text-muted)", border: "1px solid var(--gridline)" }}>
+          Names hidden for this high-volume daytime bucket.
+        </p>
+      )}
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--text-secondary)" }}>
+          Companies
+        </p>
+        {bucket.companies.length ? (
+          <div className="flex flex-wrap gap-2">
+            {bucket.companies.map((company) => (
+              <span key={company.name} className="rounded px-2 py-1 text-xs" style={{ border: "1px solid var(--gridline)", color: "var(--text-secondary)" }}>
+                {company.name} · {formatNumber(company.count)}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>No company context found.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function Page() {
-  let data: Awaited<ReturnType<typeof getLifecycleTimingDashboard>>;
+  let data: Awaited<ReturnType<typeof cachedLifecycleTiming>>;
   try {
-    data = await getLifecycleTimingDashboard();
+    data = await cachedLifecycleTiming();
   } catch (error) {
     return <DataUnavailable detail={errorDetail(error)} />;
   }
@@ -78,6 +172,23 @@ export default async function Page() {
 
           <SectionCard title="Highest-volume windows" description="The eight busiest windows for each creation event, ranked by observed records.">
             <TopTimingSlots groups={data.topSlots} />
+          </SectionCard>
+
+          <SectionCard title="Interval personas" description="Who is responsible for activity in the unusual parts of the day, grouped by lifecycle interaction.">
+            <div className="grid gap-6">
+              {data.intervals.map((group) => (
+                <div key={group.eventType}>
+                  <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+                    {group.label}
+                  </h3>
+                  <div className="grid lg:grid-cols-2 gap-4">
+                    {group.buckets.map((bucket) => (
+                      <IntervalBucketCard key={`${group.eventType}-${bucket.id}`} bucket={bucket} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </SectionCard>
 
           <div className="grid lg:grid-cols-2 gap-6">

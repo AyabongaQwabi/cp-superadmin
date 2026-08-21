@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { isValidSessionToken, SESSION_COOKIE } from "@/lib/auth";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,35 +40,40 @@ const NAV = [
   { href: "/audit", label: "Audit" },
 ];
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const sessionCookie = (await cookies()).get(SESSION_COOKIE)?.value;
+  const isAuthenticated = isValidSessionToken(sessionCookie);
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <header
-          className="sticky top-0 z-10"
-          style={{ background: "var(--surface-1)", borderBottom: "1px solid var(--border)" }}
-        >
-          <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-            <span className="font-semibold whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
-              ClinicPlus Analytics
-            </span>
-            <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-              {NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  style={{ color: "var(--text-secondary)" }}
-                  className="hover:underline"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </header>
+        {isAuthenticated && (
+          <header
+            className="sticky top-0 z-10"
+            style={{ background: "var(--surface-1)", borderBottom: "1px solid var(--border)" }}
+          >
+            <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+              <span className="font-semibold whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                ClinicPlus Analytics
+              </span>
+              <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                {NAV.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    style={{ color: "var(--text-secondary)" }}
+                    className="hover:underline"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </header>
+        )}
         <main className="flex-1" style={{ background: "var(--background)" }}>
           {children}
         </main>
