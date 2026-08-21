@@ -13,20 +13,25 @@ export function PageChrome({
 }) {
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col gap-6">
-      <div>
+      <div className="timing-page-header">
         {eyebrow && (
-          <p className="text-xs uppercase font-semibold tracking-wide mb-1" style={{ color: "var(--series-1)" }}>
+          <p className="text-xs uppercase font-semibold tracking-wide mb-2" style={{ color: "var(--series-1)" }}>
             {eyebrow}
           </p>
         )}
-        <h1 className="text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="text-sm mt-1 max-w-4xl" style={{ color: "var(--text-muted)" }}>
-            {subtitle}
-          </p>
-        )}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-sm mt-2 max-w-3xl leading-6" style={{ color: "var(--text-muted)" }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <span className="timing-page-mark" aria-hidden="true" />
+        </div>
       </div>
       {children}
     </div>

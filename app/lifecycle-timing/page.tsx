@@ -50,14 +50,15 @@ export default async function Page() {
       title="Creation Timing"
       subtitle={`Study when users sign up, appointments are created, and companies are created. Times are grouped in ${data.timezone} from each record's first tracking date.`}
     >
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatTile label="Observed creation events" value={formatNumber(totalEvents)} />
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <StatTile label="Observed creation events" value={formatNumber(totalEvents)} sub={`Across ${data.timezone}`} tone="good" />
         {data.summaries.map((summary) => (
           <StatTile
             key={summary.eventType}
             label={summary.label}
             value={formatNumber(summary.total)}
-            sub={`Peak ${summary.peakDay} ${summary.peakHour}`}
+            sub={`Peak window: ${summary.peakDay} ${summary.peakHour}`}
+            tone={summary.total ? "good" : undefined}
           />
         ))}
       </div>
@@ -71,19 +72,19 @@ export default async function Page() {
         </SectionCard>
       ) : (
         <>
-          <SectionCard title="Day and hour heatmap" description="Darker cells indicate more events for that lifecycle action and time slot.">
+          <SectionCard title="When the lifecycle moves" description="Each cell is one day and hour in local time. Compare the three matrices to see when demand enters the system.">
             <DayHourHeatmaps groups={data.dayHour} />
           </SectionCard>
 
-          <SectionCard title="Peak creation windows">
+          <SectionCard title="Highest-volume windows" description="The eight busiest windows for each creation event, ranked by observed records.">
             <TopTimingSlots groups={data.topSlots} />
           </SectionCard>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <SectionCard title="Creation by day">
+            <SectionCard title="Weekly rhythm" description="Which weekdays carry the most creation activity?">
               <SlotBars groups={data.byDay} />
             </SectionCard>
-            <SectionCard title="Creation by hour">
+            <SectionCard title="Hourly rhythm" description="Which hours are most active across the lifecycle?">
               <SlotBars groups={data.byHour} />
             </SectionCard>
           </div>

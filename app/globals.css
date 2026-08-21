@@ -36,6 +36,7 @@
     --background: #0d0d0d;
     --foreground: #ffffff;
     --surface-1: #1a1a19;
+    --heatmap-empty: #eef1f5;
     --text-primary: #ffffff;
     --text-secondary: #c3c2b7;
     --text-muted: #898781;
@@ -96,4 +97,253 @@ body {
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+.timing-page-header {
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-1);
+}
+
+.timing-page-mark {
+  display: block;
+  width: 7rem;
+  height: 3rem;
+  border-top: 2px solid var(--series-1);
+  border-right: 2px solid var(--series-2);
+  opacity: 0.7;
+  transform: skewX(-28deg) rotate(-8deg) translateY(0.5rem);
+}
+
+:root {
+  --heatmap-empty: #eef1f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --heatmap-empty: #252b32;
+  }
+}
+
+:root[data-theme="dark"] {
+  --heatmap-empty: #252b32;
+}
+
+.timing-bar-groups,
+.timing-heatmaps {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.timing-bar-group,
+.timing-heatmap-group,
+.timing-top-list {
+  min-width: 0;
+}
+
+.timing-group-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.timing-group-heading span:last-child {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.timing-bars {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.timing-bar-row {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) 3.25rem;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 1.75rem;
+  font-size: 0.75rem;
+}
+
+.timing-bar-label,
+.timing-bar-value,
+.timing-day-label,
+.timing-hour-label {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-bar-value {
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.timing-bar-track {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--heatmap-empty);
+}
+
+.timing-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--series-1);
+  transition: width 180ms ease;
+}
+
+.timing-heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.timing-heatmap {
+  display: grid;
+  grid-template-columns: 2.5rem repeat(24, minmax(2rem, 1fr));
+  min-width: 650px;
+  gap: 0.25rem;
+}
+
+.timing-heatmap-corner {
+  min-height: 1.25rem;
+}
+
+.timing-hour-label {
+  min-height: 1.25rem;
+  font-size: 0.625rem;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.timing-heatmap-row {
+  display: contents;
+}
+
+.timing-day-label {
+  align-self: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.timing-heatmap-cell {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  color: var(--text-primary);
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.timing-heatmap-cell:hover {
+  z-index: 1;
+  border-color: var(--series-1);
+  transform: scale(1.08);
+}
+
+.timing-heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.timing-heatmap-legend i {
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.2rem;
+}
+
+.timing-top-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.timing-top-list {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--background);
+}
+
+.timing-top-list ol {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timing-top-list li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+.timing-top-list li:last-child {
+  border-bottom: 0;
+}
+
+.timing-top-list strong {
+  color: var(--series-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-rank {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 640px) {
+  .timing-group-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .timing-heatmap-cell {
+    font-size: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timing-bar-fill,
+  .timing-heatmap-cell {
+    transition: none;
+  }
 }

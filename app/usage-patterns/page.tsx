@@ -48,16 +48,17 @@ export default async function Page() {
     <PageChrome
       eyebrow="Usage"
       title="Login Timing by Role"
-      subtitle={`Admin and client login timing in ${data.timezone}. Uses production login tracking when present, Companion audit login events, and Companion first-login records as fallback evidence.`}
+      subtitle={`Admin and client login timing in ${data.timezone}. Uses cp_companion.userLoginEvents first, with production tracking, Companion audit login events, and first-login records as fallback evidence.`}
     >
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatTile label="Observed login events" value={formatNumber(totalEvents)} />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <StatTile label="Observed login events" value={formatNumber(totalEvents)} sub={`Across ${data.timezone}`} tone="good" />
         {data.summaries.map((summary) => (
           <StatTile
             key={summary.role}
-            label={`${summary.role} logins`}
+            label={`${summary.role} login activity`}
             value={formatNumber(summary.total)}
-            sub={`Peak ${summary.peakDay} ${summary.peakHour}`}
+            sub={`Peak window: ${summary.peakDay} ${summary.peakHour}`}
+            tone={summary.total ? "good" : undefined}
           />
         ))}
       </div>
@@ -71,19 +72,19 @@ export default async function Page() {
         </SectionCard>
       ) : (
         <>
-          <SectionCard title="Day and hour heatmap" description="Darker cells indicate more observed logins in that role and time slot.">
+          <SectionCard title="When people sign in" description="Each cell is one day and hour in local time. Labels appear inside active cells; hover a cell for its exact count.">
             <DayHourHeatmaps groups={data.dayHour} />
           </SectionCard>
 
-          <SectionCard title="Peak login windows">
+          <SectionCard title="Highest-volume windows" description="The eight busiest windows for each role, ranked by observed events.">
             <TopTimingSlots groups={data.topSlots} />
           </SectionCard>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <SectionCard title="Logins by day">
+            <SectionCard title="Weekly rhythm" description="A compact comparison of activity by weekday.">
               <SlotBars groups={data.byDay} />
             </SectionCard>
-            <SectionCard title="Logins by hour">
+            <SectionCard title="Hourly rhythm" description="Use this view to spot coverage gaps or operational peaks.">
               <SlotBars groups={data.byHour} />
             </SectionCard>
           </div>

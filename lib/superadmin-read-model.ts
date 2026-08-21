@@ -88,6 +88,16 @@ interface RawTimingEvent {
   source?: string;
 }
 
+interface UserLoginEventDoc {
+  _id?: unknown;
+  userId?: string;
+  role?: "admin" | "client";
+  source?: string;
+  userName?: string | null;
+  email?: string | null;
+  createdAt?: Date | string;
+}
+
 const TIMING_TIMEZONE = "Africa/Johannesburg";
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TRACKING_LOGIN_PATTERN = "(login|logged|sign.?in|auth)";
@@ -988,9 +998,64 @@ function dateFromTrackingExpression() {
   };
 }
 
-export async function getRoleLoginTimingDashboard() {
-  const [prodDb, companionDb] = await Promise.all([getDb(), getCompanionDb()]);
+function buildRoleLoginTimingDashboard(
+  events: Array<{ group: "admin" | "client"; createdAt: unknown; source: string }>,
+) {
+  const timing = summarizeTimedEvents(events, { admin: "Admins", client: "Clients" });
 
+  const summaries: RoleTimingSummary[] = (["admin", "client"] as const).map((role) => {
+    const peakDay = timing.byDay
+      .find((row) => row.group === role)!
+      .slots.reduce((best, slot) => (slot.count > best.count ? slot : best));
+    const peakHour = timing.byHour
+      .find((row) => row.group === role)!
+      .slots.reduce((best, slot) => (slot.count > best.count ? slot : best));
+    return {
+      role,
+      total: timing.totals.get(role) ?? 0,
+      peakDay: peakDay.count ? peakDay.label : "-",
+      peakHour: peakHour.count ? peakHour.label : "-",
+    };
+  });
+
+  const sourceCounts = events.reduce<Record<string, number>>((counts, event) => {
+    counts[event.source] = (counts[event.source] ?? 0) + 1;
+    return counts;
+  }, {});
+
+  return {
+    summaries,
+    byDay: timing.byDay,
+    byHour: timing.byHour,
+    dayHour: timing.dayHour,
+    topSlots: timing.topSlots,
+    sourceCounts,
+    timezone: TIMING_TIMEZONE,
+  };
+}
+
+export async function getRoleLoginTimingDashboard() {
+  const companionDb = await getCompanionDb();
+  const trackedLoginEvents = await companionDb
+    .collection<UserLoginEventDoc>("userLoginEvents")
+    .find({ role: { $in: ["admin", "client"] }, createdAt: { $exists: true } })
+    .project({ role: 1, source: 1, createdAt: 1 })
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(EVENT_READ_LIMIT)
+    .toArray();
+  const trackedEvents = trackedLoginEvents
+    .map((row) => ({
+      group: row.role as "admin" | "client",
+      createdAt: row.createdAt,
+      source: row.source ?? "userLoginEvents",
+    }))
+    .filter((row) => row.group === "admin" || row.group === "client");
+
+  if (trackedEvents.length > 0) {
+    return buildRoleLoginTimingDashboard(trackedEvents);
+  }
+
+  const prodDb = await getDb();
   const [productionTrackingEvents, companionFirstLogins, auditLoginEvents] = await Promise.all([
     prodDb
       .collection("users")
@@ -1066,38 +1131,8 @@ export async function getRoleLoginTimingDashboard() {
       source: row.source ?? "production-user-tracking",
     }))
     .filter((row) => row.group === "admin" || row.group === "client");
-  const events = [...productionEvents, ...auditEvents, ...companionEvents];
-  const timing = summarizeTimedEvents(events, { admin: "Admins", client: "Clients" });
 
-  const summaries: RoleTimingSummary[] = (["admin", "client"] as const).map((role) => {
-    const peakDay = timing.byDay
-      .find((row) => row.group === role)!
-      .slots.reduce((best, slot) => (slot.count > best.count ? slot : best));
-    const peakHour = timing.byHour
-      .find((row) => row.group === role)!
-      .slots.reduce((best, slot) => (slot.count > best.count ? slot : best));
-    return {
-      role,
-      total: timing.totals.get(role) ?? 0,
-      peakDay: peakDay.count ? peakDay.label : "-",
-      peakHour: peakHour.count ? peakHour.label : "-",
-    };
-  });
-
-  const sourceCounts = events.reduce<Record<string, number>>((counts, event) => {
-    counts[event.source] = (counts[event.source] ?? 0) + 1;
-    return counts;
-  }, {});
-
-  return {
-    summaries,
-    byDay: timing.byDay,
-    byHour: timing.byHour,
-    dayHour: timing.dayHour,
-    topSlots: timing.topSlots,
-    sourceCounts,
-    timezone: TIMING_TIMEZONE,
-  };
+  return buildRoleLoginTimingDashboard([...productionEvents, ...auditEvents, ...companionEvents]);
 }
 
 export async function getLifecycleTimingDashboard() {

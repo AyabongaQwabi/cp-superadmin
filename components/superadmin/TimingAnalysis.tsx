@@ -7,116 +7,126 @@ type SlotGroup<TSlot> = {
   slots: TSlot[];
 };
 
-export function SlotBars({ groups }: { groups: Array<SlotGroup<TimingSlot>> }) {
-  const max = Math.max(1, ...groups.flatMap((group) => group.slots.map((slot) => slot.count)));
+const dayOrder = [1, 2, 3, 4, 5, 6, 7];
+const hourOrder = Array.from({ length: 24 }, (_, hour) => hour);
 
+function cellColor(count: number, max: number) {
+  if (!count) return "var(--heatmap-empty)";
+  const intensity = 0.18 + (count / Math.max(max, 1)) * 0.72;
+  return `color-mix(in srgb, var(--series-1) ${Math.round(intensity * 100)}%, var(--surface-1))`;
+}
+
+export function SlotBars({ groups }: { groups: Array<SlotGroup<TimingSlot>> }) {
   return (
-    <div className="grid gap-5">
-      {groups.map((group) => (
-        <div key={group.group} className="grid gap-2">
-          <h3 className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-            {group.label}
-          </h3>
-          <div className="grid gap-1">
-            {group.slots.map((slot) => (
-              <div key={`${group.group}-${slot.key}`} className="grid grid-cols-[4.5rem_1fr_4rem] items-center gap-2 text-xs">
-                <span style={{ color: "var(--text-muted)" }}>{slot.label}</span>
-                <div className="h-2 rounded" style={{ background: "var(--gridline)" }}>
-                  <div
-                    className="h-2 rounded"
-                    style={{
-                      width: `${Math.max(2, (slot.count / max) * 100)}%`,
-                      background: slot.count ? "var(--series-1)" : "transparent",
-                    }}
-                  />
+    <div className="timing-bar-groups">
+      {groups.map((group) => {
+        const max = Math.max(1, ...group.slots.map((slot) => slot.count));
+        return (
+          <div key={group.group} className="timing-bar-group">
+            <div className="timing-group-heading">
+              <span>{group.label}</span>
+              <span>{formatNumber(group.slots.reduce((sum, slot) => sum + slot.count, 0))} total</span>
+            </div>
+            <div className="timing-bars" role="list" aria-label={`${group.label} timing counts`}>
+              {group.slots.map((slot) => (
+                <div key={`${group.group}-${slot.key}`} className="timing-bar-row" role="listitem">
+                  <span className="timing-bar-label">{slot.label}</span>
+                  <div className="timing-bar-track" aria-hidden="true">
+                    <div
+                      className="timing-bar-fill"
+                      style={{ width: slot.count ? `${Math.max(3, (slot.count / max) * 100)}%` : "0%" }}
+                    />
+                  </div>
+                  <span className="timing-bar-value">{formatNumber(slot.count)}</span>
                 </div>
-                <span className="text-right tabular-nums" style={{ color: "var(--text-primary)" }}>
-                  {formatNumber(slot.count)}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 export function DayHourHeatmaps({ groups }: { groups: Array<SlotGroup<DayHourSlot>> }) {
-  const max = Math.max(1, ...groups.flatMap((group) => group.slots.map((slot) => slot.count)));
-  const hours = Array.from({ length: 24 }, (_, hour) => hour);
-
   return (
-    <div className="grid gap-6">
-      {groups.map((group) => (
-        <div key={group.group} className="grid gap-3">
-          <h3 className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-            {group.label}
-          </h3>
-          <div className="overflow-x-auto">
-            <div className="min-w-[760px]">
-              <div className="grid grid-cols-[3rem_repeat(24,minmax(1.6rem,1fr))] gap-1 text-[10px]">
-                <span />
-                {hours.map((hour) => (
-                  <span key={hour} className="text-center tabular-nums" style={{ color: "var(--text-muted)" }}>
-                    {hour}
+    <div className="timing-heatmaps">
+      {groups.map((group) => {
+        const max = Math.max(1, ...group.slots.map((slot) => slot.count));
+        const slotByKey = new Map(group.slots.map((slot) => [`${slot.dayOfWeek}:${slot.hour}`, slot]));
+
+        return (
+          <div key={group.group} className="timing-heatmap-group">
+            <div className="timing-group-heading">
+              <span>{group.label}</span>
+              <span>Peak intensity {formatNumber(max)}</span>
+            </div>
+            <div className="timing-heatmap-scroll">
+              <div className="timing-heatmap" role="grid" aria-label={`${group.label} day and hour heatmap`}>
+                <div className="timing-heatmap-corner" />
+                {hourOrder.map((hour) => (
+                  <span key={hour} className="timing-hour-label">
+                    {String(hour).padStart(2, "0")}
                   </span>
                 ))}
-                {[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => {
-                  const daySlots = group.slots.filter((slot) => slot.dayOfWeek === dayOfWeek);
+                {dayOrder.map((dayOfWeek) => {
+                  const firstSlot = slotByKey.get(`${dayOfWeek}:0`);
                   return (
-                    <div key={dayOfWeek} className="contents">
-                      <span className="py-1" style={{ color: "var(--text-muted)" }}>
-                        {daySlots[0]?.dayLabel ?? dayOfWeek}
-                      </span>
-                      {daySlots.map((slot) => {
-                      const opacity = slot.count ? 0.16 + (slot.count / max) * 0.74 : 0.04;
-                      return (
-                        <div
-                          key={`${dayOfWeek}-${slot.hour}`}
-                          title={`${daySlots[0]?.dayLabel ?? dayOfWeek} ${String(slot.hour).padStart(2, "0")}:00 - ${formatNumber(slot.count)}`}
-                          className="h-7 rounded-sm"
-                          style={{
-                            background: `rgba(14, 124, 123, ${opacity})`,
-                            border: "1px solid var(--gridline)",
-                          }}
-                        />
-                      );
+                    <div key={dayOfWeek} className="timing-heatmap-row" role="row">
+                      <span className="timing-day-label">{firstSlot?.dayLabel ?? dayOfWeek}</span>
+                      {hourOrder.map((hour) => {
+                        const slot = slotByKey.get(`${dayOfWeek}:${hour}`);
+                        const count = slot?.count ?? 0;
+                        return (
+                          <span
+                            key={`${dayOfWeek}-${hour}`}
+                            role="gridcell"
+                            className="timing-heatmap-cell"
+                            title={`${slot?.dayLabel ?? dayOfWeek} ${String(hour).padStart(2, "0")}:00 - ${formatNumber(count)} events`}
+                            style={{ background: cellColor(count, max) }}
+                          >
+                            {count > 0 ? formatNumber(count) : ""}
+                          </span>
+                        );
                       })}
                     </div>
                   );
                 })}
               </div>
             </div>
+            <div className="timing-heatmap-legend" aria-hidden="true">
+              <span>Less</span>
+              <i style={{ background: "var(--heatmap-empty)" }} />
+              <i style={{ background: cellColor(max * 0.25, max) }} />
+              <i style={{ background: cellColor(max * 0.6, max) }} />
+              <i style={{ background: cellColor(max, max) }} />
+              <span>More</span>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 export function TopTimingSlots({ groups }: { groups: Array<SlotGroup<DayHourSlot>> }) {
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="timing-top-grid">
       {groups.map((group) => (
-        <div key={group.group} className="rounded p-3" style={{ border: "1px solid var(--gridline)" }}>
-          <h3 className="text-xs font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>
-            {group.label}
-          </h3>
+        <div key={group.group} className="timing-top-list">
+          <div className="timing-group-heading">
+            <span>{group.label}</span>
+            <span>Top windows</span>
+          </div>
           {group.slots.length === 0 ? (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              No dated events found.
-            </p>
+            <p className="timing-empty">No dated events found.</p>
           ) : (
-            <ol className="grid gap-1 text-sm">
-              {group.slots.map((slot) => (
-                <li key={`${slot.dayOfWeek}-${slot.hour}`} className="flex items-center justify-between gap-3">
-                  <span style={{ color: "var(--text-primary)" }}>
-                    {slot.dayLabel} {String(slot.hour).padStart(2, "0")}:00
-                  </span>
-                  <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>
-                    {formatNumber(slot.count)}
-                  </span>
+            <ol>
+              {group.slots.map((slot, index) => (
+                <li key={`${slot.dayOfWeek}-${slot.hour}`}>
+                  <span className="timing-rank">{String(index + 1).padStart(2, "0")}</span>
+                  <span>{slot.dayLabel} {String(slot.hour).padStart(2, "0")}:00</span>
+                  <strong>{formatNumber(slot.count)}</strong>
                 </li>
               ))}
             </ol>
