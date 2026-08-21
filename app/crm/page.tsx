@@ -12,7 +12,7 @@ const CRM_CARDS = [
   {
     href: "/crm/bulk-email",
     title: "Bulk email studio",
-    detail: "Send marketing or transactional customer messages through the existing Mailjet pipe.",
+    detail: "Send marketing or transactional customer messages from one workspace.",
   },
   {
     href: "/crm/user-intelligence",
@@ -37,7 +37,7 @@ export default function Page() {
         ))}
       </div>
 
-      <SectionCard title="CRM operating model" description="Dashboard-to-service calls are server-side through the guarded cp-companion admin API, avoiding browser CORS issues for internal app communication. Public client telemetry endpoints still return explicit CORS headers for cp-redesign collection." >
+      <SectionCard title="CRM operating model" description="Bring customer growth, communication, and usage insight into one workspace for better admin support." >
         <div className="grid sm:grid-cols-3 gap-3">
           <div className="crm-mini"><strong>Acquire</strong><span>Understand where signups come from.</span></div>
           <div className="crm-mini"><strong>Engage</strong><span>Send segmented marketing and notices.</span></div>

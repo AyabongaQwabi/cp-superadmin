@@ -60,14 +60,14 @@ export default async function Page() {
         )}
       </SectionCard>
 
-      <SectionCard title="Write path not enabled" description="Capacity edits should be implemented later through a guarded superadmin API, with typed confirmation, idempotency, and immutable audit logging.">
+      <SectionCard title="Capacity edits unavailable" description="This workspace currently shows clinic capacity as a read-only planning view.">
         <button
           type="button"
           disabled
           className="rounded px-3 py-1.5 text-sm font-medium"
           style={{ border: "1px solid var(--border)", color: "var(--text-muted)" }}
         >
-          Capacity edits disabled in this read-only build
+          Capacity edits unavailable
         </button>
       </SectionCard>
     </PageChrome>

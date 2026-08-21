@@ -51,7 +51,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
     <PageChrome
       eyebrow="CRM"
       title="Signup and Login Intelligence"
-      subtitle="Permission-based location, device, browser, and source data collected from cp-redesign after successful signup or login."
+      subtitle="Understand where customers arrive from, what devices they use, and how they access ClinicPlus."
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatTile label="Observed events" value={formatNumber(data.total)} tone="good" />

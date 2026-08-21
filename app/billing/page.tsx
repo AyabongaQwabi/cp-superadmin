@@ -129,7 +129,7 @@ export default async function Page() {
           <ul>
             <li>Production admin sign-in</li>
             <li>Operational intelligence and timing analytics</li>
-            <li>Admin interaction telemetry in a separate analytics DB</li>
+            <li>Admin activity insights and improvement analytics</li>
             <li>Manual Yoco renewal when the paid period expires</li>
           </ul>
           <form action={startCheckout}>
@@ -190,7 +190,7 @@ export default async function Page() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <SectionCard title="Recent Yoco payment events" description="Pulled from the payment records written by the verified Yoco webhook.">
+        <SectionCard title="Recent Yoco payment events" description="A recent view of completed payment activity for this workspace.">
           {payments.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>No Yoco payment events found yet.</p>
           ) : (
@@ -206,7 +206,7 @@ export default async function Page() {
           )}
         </SectionCard>
 
-        <SectionCard title="Pending Yoco checkouts" description="Open one-time checkout attempts waiting for a signed webhook confirmation.">
+        <SectionCard title="Pending Yoco checkouts" description="Open one-time checkout attempts waiting for payment confirmation.">
           {pending.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>No pending Yoco checkouts.</p>
           ) : (

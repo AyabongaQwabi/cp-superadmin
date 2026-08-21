@@ -29,7 +29,7 @@ export default async function Page() {
   const data = await companionApi<{ tickets: Ticket[] }>("/api/admin/support-tickets");
 
   return (
-    <PageChrome eyebrow="Support" title="Support Tickets" subtitle="Requests, complaints, and suggestions submitted from cp-redesign-admin.">
+    <PageChrome eyebrow="Support" title="Support Tickets" subtitle="Requests, complaints, and suggestions submitted by clinic teams.">
       <SectionCard title="Tickets">
         <div className="flex flex-col gap-4">
           {data.tickets.map((ticket) => (

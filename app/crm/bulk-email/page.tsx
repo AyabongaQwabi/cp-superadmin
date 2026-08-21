@@ -33,7 +33,7 @@ export default function Page() {
     <PageChrome
       eyebrow="CRM"
       title="Bulk Email Studio"
-      subtitle="Send marketing or transactional customer emails through cp-companion and Mailjet. Leave recipients blank to send to the first 500 client contacts."
+      subtitle="Send marketing or transactional customer emails. Leave recipients blank to reach the first 500 client contacts."
     >
       <SectionCard title="Compose message" description="Use transactional only for service, billing, appointment, or account notices. Marketing messages should be useful and sparse.">
         <form action={sendBulkEmail} className="crm-compose">
