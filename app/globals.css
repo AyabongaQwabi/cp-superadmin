@@ -569,6 +569,88 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.crm-location-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.9fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.crm-location-map,
+.crm-location-map-placeholder {
+  width: 100%;
+  min-height: 22rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+}
+
+.crm-location-map {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+}
+
+.crm-location-map-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.crm-location-list {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+}
+
+.crm-location-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  border-bottom: 1px solid var(--gridline);
+  padding: 0.55rem 0;
+}
+
+.crm-location-row:last-child {
+  border-bottom: 0;
+}
+
+.crm-location-row strong,
+.crm-location-row span {
+  display: block;
+}
+
+.crm-location-row strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.crm-location-row span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.crm-location-row b {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-location-rank {
+  display: grid !important;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: var(--brand-red);
+  color: #fff !important;
+  font-size: 0.75rem !important;
+  font-weight: 800;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }

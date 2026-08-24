@@ -1137,7 +1137,7 @@ function summarizeTimingBuckets<T extends string>(
 
 async function getTimingBuckets(collection: string, group: string, trackingType?: string) {
   const db = await getDb();
-  const createdAt = trackingType ? "$tracking.date" : dateFromTrackingExpression();
+  const createdAt = trackingType ? dateExpression("$tracking.date") : dateFromTrackingExpression();
   const pipeline: Document[] = [
     { $match: { "tracking.0": { $exists: true } } },
     ...(trackingType
@@ -1455,9 +1455,13 @@ async function getLifecycleIntervalCounts() {
 }
 
 function dateFromTrackingExpression() {
+  return dateExpression({ $arrayElemAt: ["$tracking.date", 0] });
+}
+
+function dateExpression(input: unknown) {
   return {
     $convert: {
-      input: { $arrayElemAt: ["$tracking.date", 0] },
+      input,
       to: "date",
       onError: null,
       onNull: null,
