@@ -651,6 +651,47 @@ body {
   font-weight: 800;
 }
 
+.crm-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.crm-ip-location-table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+
+.crm-ip-location-table th,
+.crm-ip-location-table td {
+  border-bottom: 1px solid var(--gridline);
+  padding: 0.7rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.84rem;
+}
+
+.crm-ip-location-table th {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.crm-ip-location-table td {
+  color: var(--text-secondary);
+}
+
+.crm-ip-location-table strong,
+.crm-ip-location-table b {
+  color: var(--text-primary);
+}
+
+.crm-ip-location-table span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  margin-top: 0.15rem;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }

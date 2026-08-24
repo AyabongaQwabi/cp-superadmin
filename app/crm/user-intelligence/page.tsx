@@ -14,6 +14,23 @@ type IntelEvent = {
   source?: string;
   device?: { deviceType?: string; browser?: string; os?: string; timezone?: string };
   location?: { latitude?: number; longitude?: number; accuracy?: number } | null;
+  locationSource?: "gps" | "ip" | "unavailable";
+  ipLocation?: {
+    query?: string;
+    status?: string;
+    country?: string;
+    countryCode?: string;
+    region?: string;
+    regionName?: string;
+    city?: string;
+    zip?: string;
+    lat?: number;
+    lon?: number;
+    timezone?: string;
+    isp?: string;
+    org?: string;
+    as?: string;
+  } | null;
   locationPermission?: string;
   ip?: string;
   createdAt?: string;
@@ -42,6 +59,18 @@ type LocationInsight = TopLocation & {
   placeName: string;
   formattedAddress: string | null;
   geocodeStatus: string | null;
+};
+
+type TopIpLocation = {
+  key: string;
+  placeName: string;
+  countryCode: string | null;
+  latitude: number;
+  longitude: number;
+  count: number;
+  latestAt: string | null;
+  ips: Set<string>;
+  isps: Set<string>;
 };
 
 type GoogleGeocodeComponent = {
@@ -80,6 +109,7 @@ function topLocations(events: IntelEvent[]): TopLocation[] {
 
   for (const event of events) {
     if (!hasCoordinates(event)) continue;
+    if (event.locationSource === "ip") continue;
 
     const latitude = Number(event.location.latitude.toFixed(4));
     const longitude = Number(event.location.longitude.toFixed(4));
@@ -109,6 +139,57 @@ function topLocations(events: IntelEvent[]): TopLocation[] {
   return [...locations.values()]
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
     .slice(0, 10);
+}
+
+function ipPlaceName(location: NonNullable<IntelEvent["ipLocation"]>) {
+  return [location.city, location.regionName, location.country].filter(Boolean).join(", ") || "Unknown location";
+}
+
+function topIpLocations(events: IntelEvent[]): TopIpLocation[] {
+  const locations = new Map<string, TopIpLocation>();
+
+  for (const event of events) {
+    const ipLocation = event.ipLocation;
+    if (
+      event.locationSource !== "ip" ||
+      !ipLocation ||
+      typeof ipLocation.lat !== "number" ||
+      typeof ipLocation.lon !== "number"
+    ) {
+      continue;
+    }
+
+    const latitude = Number(ipLocation.lat.toFixed(3));
+    const longitude = Number(ipLocation.lon.toFixed(3));
+    const placeName = ipPlaceName(ipLocation);
+    const key = `${placeName}|${latitude},${longitude}`;
+    const existing = locations.get(key);
+    const createdAt = event.createdAt ?? null;
+
+    if (existing) {
+      existing.count++;
+      if (event.ip) existing.ips.add(event.ip);
+      if (ipLocation.isp) existing.isps.add(ipLocation.isp);
+      if (createdAt && (!existing.latestAt || new Date(createdAt) > new Date(existing.latestAt))) existing.latestAt = createdAt;
+      continue;
+    }
+
+    locations.set(key, {
+      key,
+      placeName,
+      countryCode: ipLocation.countryCode ?? null,
+      latitude,
+      longitude,
+      count: 1,
+      latestAt: createdAt,
+      ips: new Set(event.ip ? [event.ip] : []),
+      isps: new Set(ipLocation.isp ? [ipLocation.isp] : []),
+    });
+  }
+
+  return [...locations.values()]
+    .sort((a, b) => b.count - a.count || a.placeName.localeCompare(b.placeName))
+    .slice(0, 20);
 }
 
 function googleStaticMapUrl(locations: TopLocation[]) {
@@ -206,6 +287,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
     `/api/admin/admin-companion/crm/user-intelligence?days=${encodeURIComponent(days)}`,
   );
   const locations = topLocations(data.events);
+  const ipLocations = topIpLocations(data.events);
   const locationInsights = await Promise.all(locations.map(reverseGeocodeLocation));
   const mapUrl = googleStaticMapUrl(locations);
 
@@ -226,11 +308,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
         <SectionCard title="Browsers"><BucketList rows={data.byBrowser} /></SectionCard>
       </div>
 
-      <SectionCard title="Top locations" description="Permission-based signup and login coordinates, grouped by rounded latitude and longitude.">
+      <SectionCard title="Top locations" description="GPS signup and login coordinates, grouped by rounded latitude and longitude.">
         {locations.length === 0 ? (
           <EmptyState
             title="No mapped locations found"
-            detail="Location coordinates will appear here once customers share location during signup or login."
+            detail="GPS coordinates will appear here for customers who have already granted location access."
           />
         ) : (
           <div className="crm-location-grid">
@@ -258,6 +340,45 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
                 </div>
               ))}
             </div>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="IP locations" description="Fallback locations from customer IP addresses when GPS location is not available.">
+        {ipLocations.length === 0 ? (
+          <EmptyState
+            title="No IP locations found"
+            detail="IP-derived locations will appear here once signup or login events are enriched by the companion API."
+          />
+        ) : (
+          <div className="crm-table-scroll">
+            <table className="crm-ip-location-table">
+              <thead>
+                <tr>
+                  <th>Location</th>
+                  <th>Coordinates</th>
+                  <th>IPs</th>
+                  <th>ISP</th>
+                  <th>Latest</th>
+                  <th>Events</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ipLocations.map((location) => (
+                  <tr key={location.key}>
+                    <td>
+                      <strong>{location.placeName}</strong>
+                      {location.countryCode ? <span>{location.countryCode}</span> : null}
+                    </td>
+                    <td>{location.latitude.toFixed(3)}, {location.longitude.toFixed(3)}</td>
+                    <td>{formatNumber(location.ips.size)}</td>
+                    <td>{[...location.isps].slice(0, 2).join(", ") || "Unknown"}</td>
+                    <td>{location.latestAt ? new Date(location.latestAt).toLocaleString("en-ZA") : "Unknown"}</td>
+                    <td><b>{formatNumber(location.count)}</b></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </SectionCard>
