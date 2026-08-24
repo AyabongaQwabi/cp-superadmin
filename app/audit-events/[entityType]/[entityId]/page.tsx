@@ -7,7 +7,7 @@ import type { AuditEntityType } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
-const ENTITY_TYPES: AuditEntityType[] = ["appointment", "user", "company"];
+const ENTITY_TYPES: AuditEntityType[] = ["appointment", "user", "company", "site", "invoice", "employee"];
 
 function isValidEntityType(value: string): value is AuditEntityType {
   return (ENTITY_TYPES as string[]).includes(value);

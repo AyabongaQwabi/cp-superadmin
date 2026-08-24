@@ -1,7 +1,7 @@
 import { Document } from "mongodb";
 import { getCompanionDb } from "./mongodb";
 
-export type AuditEntityType = "appointment" | "user" | "company";
+export type AuditEntityType = "appointment" | "user" | "company" | "site" | "invoice" | "employee";
 export type AuditActorType = "user" | "admin" | "system";
 export type AuditSource = "cp-redesign" | "cp-redesign-admin" | "legacy-import" | "system";
 

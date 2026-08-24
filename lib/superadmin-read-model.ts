@@ -130,7 +130,8 @@ interface UserLoginEventDoc {
 
 const TIMING_TIMEZONE = "Africa/Johannesburg";
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const TRACKING_LOGIN_PATTERN = "(login|logged|sign.?in|auth)";
+const AUDIT_LOGIN_ACTION = "login";
+const TRACKING_SIGNUP_TYPE = "USER_SIGNUP";
 const EVENT_READ_LIMIT = 25000;
 
 const LIFECYCLE_INTERVALS: Array<{
@@ -1126,11 +1127,18 @@ function summarizeTimingBuckets<T extends string>(
   return { byDay, byHour, dayHour, topSlots, totals };
 }
 
-async function getTimingBuckets(collection: string, group: string) {
+async function getTimingBuckets(collection: string, group: string, trackingType?: string) {
   const db = await getDb();
-  return db.collection(collection).aggregate<TimingBucket>([
+  const createdAt = trackingType ? "$tracking.date" : dateFromTrackingExpression();
+  const pipeline: Document[] = [
     { $match: { "tracking.0": { $exists: true } } },
-    { $project: { createdAt: dateFromTrackingExpression() } },
+    ...(trackingType
+      ? [
+          { $unwind: "$tracking" },
+          { $match: { "tracking.type": trackingType } },
+        ]
+      : []),
+    { $project: { createdAt } },
     { $match: { createdAt: { $ne: null } } },
     {
       $project: {
@@ -1154,7 +1162,8 @@ async function getTimingBuckets(collection: string, group: string) {
         count: 1,
       },
     },
-  ], { allowDiskUse: true }).toArray();
+  ];
+  return db.collection(collection).aggregate<TimingBucket>(pipeline, { allowDiskUse: true }).toArray();
 }
 
 function intervalExpressionFromHour(hourExpression: Document) {
@@ -1485,6 +1494,7 @@ function buildRoleLoginTimingDashboard(
 }
 
 export async function getRoleLoginTimingDashboard() {
+  console.log("Fetching role login timing dashboard data...");
   const companionDb = await getCompanionDb();
   const trackedLoginEvents = await companionDb
     .collection<UserLoginEventDoc>("userLoginEvents")
@@ -1501,48 +1511,26 @@ export async function getRoleLoginTimingDashboard() {
     }))
     .filter((row) => row.group === "admin" || row.group === "client");
 
+    console.log(`Found ${trackedEvents.length} tracked login events for role login timing dashboard`);
   const prodDb = await getDb();
-  const [productionTrackingEvents, companionFirstLogins, auditLoginEvents] = await Promise.all([
-    prodDb
-      .collection("users")
-      .aggregate<RawTimingEvent>([
-        { $match: { role: { $in: ["admin", "client"] }, "tracking.0": { $exists: true } } },
-        { $project: { role: 1, tracking: 1 } },
-        { $unwind: "$tracking" },
-        {
-          $match: {
-            "tracking.date": { $exists: true, $ne: null },
-            "tracking.type": { $regex: TRACKING_LOGIN_PATTERN, $options: "i" },
-          },
-        },
-        { $project: { role: 1, createdAt: "$tracking.date", source: { $literal: "production-user-tracking" } } },
-        { $sort: { createdAt: -1 } },
-        { $limit: EVENT_READ_LIMIT },
-      ], { allowDiskUse: true })
-      .toArray(),
-    companionDb
-      .collection<CompanionUserDoc>("companionUsers")
-      .find({ firstLoginAt: { $exists: true } })
-      .project({ productionUserId: 1, firstLoginAt: 1 })
-      .sort({ firstLoginAt: -1, _id: -1 })
-      .limit(EVENT_READ_LIMIT)
-      .toArray(),
+  const [auditLoginEvents] = await Promise.all([
     companionDb
       .collection("audit_events")
       .find({
         createdAt: { $exists: true, $ne: null },
-        action: { $regex: TRACKING_LOGIN_PATTERN, $options: "i" },
+        action: AUDIT_LOGIN_ACTION,
       })
-      .project({ actorId: 1, createdAt: 1, source: 1 })
-      .sort({ createdAt: -1, _id: -1 })
+      .project({ actorId: 1, actorType: 1, actorName: 1, createdAt: 1, source: 1 })
+       .sort({ createdAt: -1, _id: -1 })
       .limit(EVENT_READ_LIMIT)
       .toArray(),
   ]);
 
+  console.log(`Found ${auditLoginEvents.length} audit login events for role login timing dashboard`);
+
   const productionIds = Array.from(
     new Set(
       [
-        ...companionFirstLogins.map((row) => row.productionUserId),
         ...auditLoginEvents.map((row) => row.actorId),
       ].filter((id): id is string => typeof id === "string" && id.length > 0),
     ),
@@ -1552,33 +1540,21 @@ export async function getRoleLoginTimingDashboard() {
     : [];
   const roleByProductionId = new Map(productionUsers.map((user) => [user.id, user.role]));
 
-  const companionEvents = companionFirstLogins
-    .map((row) => ({
-      group: roleByProductionId.get(row.productionUserId ?? "") as "admin" | "client" | undefined,
-      createdAt: row.firstLoginAt,
-      source: "cp-companion-first-login",
-    }))
-    .filter((row): row is { group: "admin" | "client"; createdAt: unknown; source: string } =>
-      row.group === "admin" || row.group === "client",
-    );
   const auditEvents = auditLoginEvents
     .map((row) => ({
-      group: roleByProductionId.get(row.actorId ?? "") as "admin" | "client" | undefined,
+      group: row.actorType === "admin"
+        ? "admin"
+        : row.actorType === "user"
+          ? "client"
+          : roleByProductionId.get(row.actorId ?? ""),
       createdAt: row.createdAt,
       source: typeof row.source === "string" && row.source.length > 0 ? row.source : "audit-login",
     }))
     .filter((row): row is { group: "admin" | "client"; createdAt: unknown; source: string } =>
       row.group === "admin" || row.group === "client",
     );
-  const productionEvents = productionTrackingEvents
-    .map((row) => ({
-      group: row.role as "admin" | "client",
-      createdAt: row.createdAt,
-      source: row.source ?? "production-user-tracking",
-    }))
-    .filter((row) => row.group === "admin" || row.group === "client");
-
-  return buildRoleLoginTimingDashboard([...trackedEvents, ...productionEvents, ...auditEvents, ...companionEvents]);
+ 
+  return buildRoleLoginTimingDashboard([...trackedEvents, ...auditEvents]);
 }
 
 export async function getLifecycleTimingDashboard() {
@@ -1588,7 +1564,7 @@ export async function getLifecycleTimingDashboard() {
     companies: "Companies created",
   };
   const [signupBuckets, appointmentBuckets, deletedAppointmentBuckets, companyBuckets] = await Promise.all([
-    getTimingBuckets("users", "signups"),
+    getTimingBuckets("users", "signups", TRACKING_SIGNUP_TYPE),
     getTimingBuckets("appointments", "appointments"),
     getTimingBuckets("deleted_appointments", "appointments"),
     getTimingBuckets("companies", "companies"),

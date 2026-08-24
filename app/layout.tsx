@@ -28,6 +28,7 @@ const NAV = [
     label: "Command",
     items: [
       { href: "/", label: "Overview", icon: "OV" },
+      { href: "/assistant", label: "Assistant", icon: "AI" },
       { href: "/operations", label: "Operations", icon: "OP" },
       { href: "/system-controls", label: "Controls", icon: "CT" },
       { href: "/support-tickets", label: "Support", icon: "SP" },

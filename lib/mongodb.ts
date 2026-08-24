@@ -36,6 +36,7 @@ export async function getDb() {
   if (!dbName) {
     throw new Error("SELECTED_DB is not set. Add it to .env.local.");
   }
+  console.log("Using database:", dbName);
   const client = await getClientPromise();
   return client.db(dbName);
 }
@@ -46,6 +47,7 @@ const companionDbName = process.env.COMPANION_DB || "cp_companion";
 const adminCompanionDbName = process.env.ADMIN_COMPANION_DB || "clinicplus_admin_companion";
 
 export async function getCompanionDb() {
+  console.log("Using companion database:", companionDbName);
   const client = await getClientPromise();
   return client.db(companionDbName);
 }

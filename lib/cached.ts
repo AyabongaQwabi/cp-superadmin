@@ -95,7 +95,7 @@ export async function cachedEmployeeSummary(filters: SegmentFilters = {}) {
 // window than the 1-hour convention above rather than the same cadence
 // as the revenue/appointment aggregates.
 const AUDIT_REVALIDATE_SECONDS = 60;
-const TIMING_REVALIDATE_SECONDS = 300;
+const TIMING_REVALIDATE_SECONDS = 60;
 
 export const cachedRoleLoginTiming = unstable_cache(
   getRoleLoginTimingDashboard,

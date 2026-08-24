@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../cp-ai-companion-server"
+		},
+		{
+			"path": "../cp-redesign-admin"
+		},
+		{
+			"path": "../../seo/cp-redesign"
+		}
+	],
+	"settings": {}
+}
