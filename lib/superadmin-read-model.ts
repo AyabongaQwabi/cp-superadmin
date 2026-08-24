@@ -128,6 +128,14 @@ interface UserLoginEventDoc {
   createdAt?: Date | string;
 }
 
+interface RoleLoginTimingEvent {
+  group: "admin" | "client";
+  createdAt: unknown;
+  source: string;
+  userId: string | null;
+  userName: string | null;
+}
+
 const TIMING_TIMEZONE = "Africa/Johannesburg";
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const AUDIT_LOGIN_ACTION = "login";
@@ -1457,9 +1465,7 @@ function dateFromTrackingExpression() {
   };
 }
 
-function buildRoleLoginTimingDashboard(
-  events: Array<{ group: "admin" | "client"; createdAt: unknown; source: string }>,
-) {
+function buildRoleLoginTimingDashboard(events: RoleLoginTimingEvent[]) {
   const timing = summarizeTimedEvents(events, { admin: "Admins", client: "Clients" });
 
   const summaries: RoleTimingSummary[] = (["admin", "client"] as const).map((role) => {
@@ -1488,6 +1494,10 @@ function buildRoleLoginTimingDashboard(
     byHour: timing.byHour,
     dayHour: timing.dayHour,
     topSlots: timing.topSlots,
+    recentLogins: events
+      .slice()
+      .sort((a, b) => new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime())
+      .slice(0, 50),
     sourceCounts,
     timezone: TIMING_TIMEZONE,
   };
@@ -1499,7 +1509,7 @@ export async function getRoleLoginTimingDashboard() {
   const trackedLoginEvents = await companionDb
     .collection<UserLoginEventDoc>("userLoginEvents")
     .find({ role: { $in: ["admin", "client"] }, createdAt: { $exists: true } })
-    .project({ role: 1, source: 1, createdAt: 1 })
+    .project({ userId: 1, role: 1, source: 1, userName: 1, createdAt: 1 })
     .sort({ createdAt: -1, _id: -1 })
     .limit(EVENT_READ_LIMIT)
     .toArray();
@@ -1508,6 +1518,8 @@ export async function getRoleLoginTimingDashboard() {
       group: row.role as "admin" | "client",
       createdAt: row.createdAt,
       source: row.source ?? "userLoginEvents",
+      userId: row.userId ?? null,
+      userName: row.userName ?? null,
     }))
     .filter((row) => row.group === "admin" || row.group === "client");
 
@@ -1549,8 +1561,10 @@ export async function getRoleLoginTimingDashboard() {
           : roleByProductionId.get(row.actorId ?? ""),
       createdAt: row.createdAt,
       source: typeof row.source === "string" && row.source.length > 0 ? row.source : "audit-login",
+      userId: typeof row.actorId === "string" ? row.actorId : null,
+      userName: typeof row.actorName === "string" ? row.actorName : null,
     }))
-    .filter((row): row is { group: "admin" | "client"; createdAt: unknown; source: string } =>
+    .filter((row): row is RoleLoginTimingEvent =>
       row.group === "admin" || row.group === "client",
     );
  
