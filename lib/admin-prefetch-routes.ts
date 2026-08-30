@@ -19,6 +19,6 @@ export const ADMIN_PREFETCH_ROUTES = [
   "/crm/bulk-email",
   "/crm/user-intelligence",
   "/billing",
-  "/support-tickets",
+  "/support-requests",
   "/system-controls",
 ];

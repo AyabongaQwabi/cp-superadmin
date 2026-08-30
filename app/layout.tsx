@@ -31,7 +31,7 @@ const NAV = [
       { href: "/assistant", label: "Assistant", icon: "AI" },
       { href: "/operations", label: "Operations", icon: "OP" },
       { href: "/system-controls", label: "Controls", icon: "CT" },
-      { href: "/support-tickets", label: "Support", icon: "SP" },
+      { href: "/support-requests", label: "Support", icon: "SP" },
     ],
   },
   {
@@ -123,7 +123,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
             <div className="admin-actions">
               <Link href="/billing">Subscription</Link>
-              <Link href="/support-tickets">Support queue</Link>
+              <Link href="/support-requests">Support queue</Link>
               <Link href="/system-controls">Controls</Link>
             </div>
           </header>

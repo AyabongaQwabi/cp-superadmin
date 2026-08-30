@@ -185,7 +185,7 @@ export default async function Page() {
             <form action={refreshAccess}>
               <button type="submit">Refresh access</button>
             </form>
-            <Link href="/support-tickets">Contact support</Link>
+            <Link href="/support-requests">Contact support</Link>
           </div>
         </SectionCard>
       </div>

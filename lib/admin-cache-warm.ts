@@ -52,7 +52,7 @@ export async function warmAdminCompanionCache(adminUserId?: string) {
     () => cachedCompanionAccessDashboard(),
     () => cachedCompanionApi("/api/admin/admin-companion/crm/audience?role=client&limit=100&q="),
     () => cachedCompanionApi("/api/admin/admin-companion/crm/user-intelligence?days=30"),
-    () => cachedCompanionApi("/api/admin/support-tickets", 30),
+    () => cachedCompanionApi("/api/support-requests", 30),
     () => cachedCompanionApi("/api/admin/platform-controls", 30),
   ];
 
