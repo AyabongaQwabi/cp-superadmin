@@ -6,6 +6,7 @@ import Link from "next/link";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
 import { AdminInteractionTracker } from "@/components/superadmin/AdminInteractionTracker";
 import { BackgroundDataPreloader } from "@/components/superadmin/BackgroundDataPreloader";
+import { HotjarAnalytics } from "@/components/Hotjar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -79,6 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
+        <HotjarAnalytics />
         {isAuthenticated && (
           <aside className="admin-sidebar">
             <Link href="/" className="admin-brand" aria-label="Clinicplus Admin Companion home">
@@ -131,7 +133,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main className={isAuthenticated ? "admin-main" : ""} style={{ background: "var(--background)" }}>
           {children}
         </main>
-        {isAuthenticated && (
+        {isAuthenticated && session && (
           <>
             <AdminInteractionTracker />
             <BackgroundDataPreloader />
