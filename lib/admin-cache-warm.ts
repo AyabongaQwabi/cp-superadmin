@@ -5,16 +5,20 @@ import {
   cachedClinicCapacity,
   cachedClinicSummary,
   cachedCompanionAccessDashboard,
+  cachedDashboardStats,
   cachedDataQualityDashboard,
   cachedEmployeeSummary,
+  cachedFinanceAnalytics,
   cachedInvoiceDashboard,
   cachedLifecycleTiming,
   cachedMonthlySummary,
   cachedOperationsSummary,
   cachedOverviewTotals,
   cachedPeopleDirectory,
+  cachedPlatformSignals,
   cachedRoleLoginTiming,
   cachedServiceDashboard,
+  cachedSitesPlatformInsights,
   cachedUsersDirectory,
   cachedYearlySummary,
 } from "@/lib/cached";
@@ -54,6 +58,11 @@ export async function warmAdminCompanionCache(adminUserId?: string) {
     () => cachedCompanionApi("/api/admin/admin-companion/crm/user-intelligence?days=30"),
     () => cachedCompanionApi("/api/support-requests", 30),
     () => cachedCompanionApi("/api/admin/platform-controls", 30),
+    () => cachedDashboardStats(),
+    () => cachedPlatformSignals(),
+    () => cachedSitesPlatformInsights(),
+    () => cachedFinanceAnalytics(),
+    () => cachedCompanionApi("/api/admin/feedback", 30),
   ];
 
   if (adminUserId) {

@@ -38,6 +38,7 @@ const NAV = [
   {
     label: "Insights",
     items: [
+      { href: "/insights", label: "Insights hub", icon: "IH" },
       { href: "/usage-patterns", label: "Usage patterns", icon: "UP" },
       { href: "/lifecycle-timing", label: "Lifecycle timing", icon: "LT" },
       { href: "/data-quality", label: "Data quality", icon: "DQ" },

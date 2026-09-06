@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cachedCompanionApi } from "./companion-api";
 import {
   getClinicSummary,
   getCompanySummary,
@@ -229,4 +230,41 @@ export async function cachedCompany360(companyId: string) {
     ["admin-company-360", companyId],
     { revalidate: DIRECTORY_REVALIDATE_SECONDS },
   )();
+}
+
+// cp-companion admin APIs — live operational reads cached at 60–120s.
+const COMPANION_INSIGHTS_REVALIDATE_SECONDS = 90;
+
+export async function cachedDashboardStats(type: "all" | "x-rays" = "all") {
+  const path =
+    type === "x-rays" ? "/api/admin/dashboard-stats?type=x-rays" : "/api/admin/dashboard-stats";
+  return cachedCompanionApi(path, COMPANION_INSIGHTS_REVALIDATE_SECONDS);
+}
+
+export async function cachedPlatformSignals() {
+  return cachedCompanionApi("/api/admin/platform-signals", COMPANION_INSIGHTS_REVALIDATE_SECONDS);
+}
+
+export async function cachedSitesPlatformInsights() {
+  return cachedCompanionApi("/api/admin/sites/insights", COMPANION_INSIGHTS_REVALIDATE_SECONDS);
+}
+
+export async function cachedFinanceAnalytics(type: "all" | "x-rays" = "all", date?: string) {
+  const params = new URLSearchParams();
+  if (date) params.set("date", date);
+  if (type === "x-rays") params.set("type", "x-rays");
+  const query = params.toString();
+  const path = query ? `/api/admin/finance-analytics?${query}` : "/api/admin/finance-analytics";
+  return cachedCompanionApi(path, ADMIN_PAGE_REVALIDATE_SECONDS);
+}
+
+export async function cachedFeedbackSummary() {
+  return cachedCompanionApi("/api/admin/feedback", 30);
+}
+
+export async function cachedUserIntelligence(days = 30) {
+  return cachedCompanionApi(
+    `/api/admin/admin-companion/crm/user-intelligence?days=${days}`,
+    TIMING_REVALIDATE_SECONDS,
+  );
 }

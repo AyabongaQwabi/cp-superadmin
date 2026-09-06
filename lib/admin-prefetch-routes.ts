@@ -1,5 +1,6 @@
 export const ADMIN_PREFETCH_ROUTES = [
   "/",
+  "/insights",
   "/operations",
   "/usage-patterns",
   "/lifecycle-timing",
